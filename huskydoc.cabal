@@ -36,6 +36,11 @@ test-suite huskydoc-test
   main-is:             Spec.hs
   build-depends:       base
                      , huskydoc
+                     , hspec            >= 2.2 && < 2.3
+                     , hspec-discover   >= 2.2 && < 2.3
+                     , hspec-megaparsec >= 0.1 && < 0.3
+                     , megaparsec       >= 4.4 && < 5.1
+                     , text             >= 1.2 && < 1.3
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
