@@ -13,27 +13,30 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
+
 {-# LANGUAGE OverloadedStrings #-}
 {-|
-Module      :  Text.Huskydoc.ParsingSpec
+Module      :  Text.Huskydoc.Inlines
 Copyright   :  © 2016 Albert Krewinkel
 License     :  ISC
 
 Maintainer  :  Albert Krewinkel <tarleb@zeitkraut.de>
 Stability   :  experimental
 Portability :  portable
+
+Tests for the inlines parsers.
 -}
-module Text.Huskydoc.ParsingSpec
+module Text.Huskydoc.InlinesSpec
     ( main
     , spec
     ) where
 
-import Text.Huskydoc.Parsing
+import Text.Huskydoc.Inlines
+import Text.Huskydoc.Parsing (Parser, ParseError, parse)
 
 import Data.Text
 import Test.Hspec
 import Test.Hspec.Megaparsec
-import Text.Megaparsec ( parse )
 
 -- | Run this spec.
 main :: IO ()
@@ -45,32 +48,24 @@ parse' p txt = parse p "" txt
 
 spec :: Spec
 spec = do
-    describe "spaceChar parser" $ do
-        it "parses tab" $ do
-            parse' spaceChar "\t" `shouldParse` '\t'
-        it "parses space" $ do
-            parse' spaceChar " " `shouldParse` ' '
-        it "doesn't parse newline characters" $ do
-            parse' spaceChar `shouldFailOn` "\n"
+    describe "soft linebreaks parser" $ do
+        it "parses crlf" $ do
+            parse' softbreak "\r\n" `shouldParse` SoftBreak
+        it "parses linefeed" $ do
+            parse' softbreak "\n" `shouldParse` SoftBreak
+        it "allows spaces before linefeed" $ do
+            parse' softbreak "   \n" `shouldParse` SoftBreak
 
-    describe "skipSpaces" $ do
-        it "parses single space char" $ do
-            parse' skipSpaces `shouldSucceedOn` " "
-        it "parses many tabs and spaces" $ do
-            parse' skipSpaces `shouldSucceedOn` "  \t  \t\t"
-        it "succeeds on empty string" $ do
-            parse' skipSpaces `shouldSucceedOn` ""
+    describe "hard linebreaks parser" $ do
+        it "parses spaces, continuation char `+`, and crlf" $ do
+            parse' hardbreak " +\r\n" `shouldParse` LineBreak
+        it "parses spaces,  continuation char `+`, and linefeed" $ do
+            parse' hardbreak "    +\n" `shouldParse` LineBreak
 
-    describe "someSpaces" $ do
-        it "parses single space char" $ do
-            parse' someSpaces `shouldSucceedOn` " "
-        it "parses many tabs and spaces" $ do
-            parse' someSpaces `shouldSucceedOn` "  \t  \t\t"
+    describe "string parser" $ do
+        it "parses normal string" $ do
+            parse' str "hello" `shouldParse` (Str "hello")
+        it "fails on newline" $ do
+            parse' str `shouldFailOn` "\n"
         it "fails on empty string" $ do
-            parse' someSpaces `shouldFailOn` ""
-
-    describe "blankline" $ do
-        it "parses empty line plus final newline" $ do
-            parse' blankline `shouldSucceedOn`" \n"
-        it "fails on non-empty line" $ do
-            parse' blankline `shouldFailOn` "   a \n"
+            parse' str `shouldFailOn` ""
