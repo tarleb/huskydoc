@@ -22,26 +22,17 @@ License     :  ISC
 Maintainer  :  Albert Krewinkel <tarleb@zeitkraut.de>
 Stability   :  experimental
 Portability :  portable
+
+Tests for the Parsing module.
 -}
 module Text.Huskydoc.Parsing
     ( blankline
     , skipSpaces
+    , someSpaces
     , spaceChar
     -- Re-export Megaparsec types
-    , (<?>)
     , Parser
-    , ParseError (..)
-    , char
-    , choice
-    , eol
-    , many
-    , noneOf
-    , notFollowedBy
-    , runParser
-    , skipMany
-    , some
-    , try
-    , void
+    , module Text.Megaparsec
     ) where
 
 import Control.Monad ( void )
@@ -53,8 +44,13 @@ import Text.Megaparsec.Text ( Parser )
 spaceChar :: Parser Char
 spaceChar = satisfy $ \c -> c == ' ' || c == '\t'
 
+-- | Skip zero or more spaces.
 skipSpaces :: Parser ()
 skipSpaces = skipMany spaceChar
+
+-- | Skip one or more spaces.
+someSpaces :: Parser ()
+someSpaces = skipSome spaceChar
 
 -- | Skips zero or more spaces or tabs, then reads a newline.
 blankline :: Parser ()

@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Text.Huskydoc
+                     , Text.Huskydoc.Inlines
                      , Text.Huskydoc.Parsing
   build-depends:       base       >= 4.7 && < 5
                      , megaparsec >= 4.4 && < 5.1
