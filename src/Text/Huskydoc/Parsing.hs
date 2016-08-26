@@ -26,7 +26,11 @@ Portability :  portable
 Tests for the Parsing module.
 -}
 module Text.Huskydoc.Parsing
-    ( blankline
+    ( ParserState (..)
+    , blankline
+    , markEndOfStr
+    , notAfterString
+    , parseDef
     , skipSpaces
     , someSpaces
     , spaceChar
@@ -35,10 +39,45 @@ module Text.Huskydoc.Parsing
     , module Text.Megaparsec
     ) where
 
-import Control.Monad ( void )
-import Data.Text
-import Text.Megaparsec hiding ( spaceChar, spaces )
-import Text.Megaparsec.Text ( Parser )
+import           Control.Monad ( liftM, void )
+import qualified Control.Monad.Trans.State as TransState
+import           Control.Monad.Trans.Class (lift)
+import           Data.Default ( Default(..) )
+import           Data.Text
+import           Text.Megaparsec hiding ( Parser, spaceChar, spaces )
+
+type Parser = ParsecT Text (TransState.State ParserState)
+-- type Parser = TransState.StateT ParserState (ParsecT Text (Either ParseError))
+
+-- | Parser state
+data ParserState = ParserState
+    { stateLastStrPos :: Maybe SourcePos -- ^ End position of the last Str
+    }
+
+instance Default ParserState where
+    def = ParserState
+          { stateLastStrPos = Nothing
+          }
+
+-- | Helper function to test parsers.  This sets the source name to the empty
+--   string and uses the default parser state.
+parseDef :: Parser a -> Text -> Either ParseError a
+parseDef p txt = flip TransState.evalState def $  runParserT p "" txt
+
+modifyLocalState :: (ParserState -> ParserState) -> Parser ()
+modifyLocalState = lift . TransState.modify
+
+-- | Set end position of last string to current position.
+markEndOfStr :: Parser ()
+markEndOfStr = modifyLocalState . setLastStrPos =<< getPosition
+    where setLastStrPos pos st = st { stateLastStrPos = Just pos }
+
+-- | Check whether the parser position is right after a str.
+notAfterString :: Parser Bool
+notAfterString = do
+    pos <- getPosition
+    st <- lift (stateLastStrPos <$> TransState.get)
+    return $ st /= Just pos
 
 -- | Parses a space or tab.
 spaceChar :: Parser Char

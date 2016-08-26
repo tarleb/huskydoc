@@ -32,18 +32,22 @@ module Text.Huskydoc.Inlines
     , hardbreak
     , softbreak
     , str
+    , strong
+    , symbol
+    , whitespace
     ) where
 
 import Text.Huskydoc.Parsing
-import Control.Monad ( void )
+import Control.Monad ( guard, void )
 import Data.Text
 
 -- | Inline text types.
 data Inline =
-      Str Text
-    | Space
+      LineBreak
     | SoftBreak
-    | LineBreak
+    | Space
+    | Str Text
+    | Strong [Inline]
         deriving (Show, Eq)
 
 -- | Parse a single inline element.
@@ -52,7 +56,9 @@ inline = choice
          [ hardbreak
          , whitespace
          , softbreak
+         , strong
          , str
+         , symbol
          ] <?> "inline"
 
 -- | Parse one or more whitespace characters (i.e. tabs or spaces).
@@ -69,4 +75,45 @@ softbreak = SoftBreak <$ try (skipSpaces *> void eol *> notFollowedBy blankline)
 
 -- | Parse a simple, markup-less string.
 str :: Parser Inline
-str = Str . pack <$> some (noneOf " \t\n\r")
+str = Str . pack <$> some (noneOf disallowedStrChars) <* markEndOfStr
+
+-- | Parse text marked-up as strong.
+strong :: Parser Inline
+strong = Strong <$> delimitedMarkup '*'
+
+delimitedMarkup :: Char -> Parser [Inline]
+delimitedMarkup c = doubleDelimitedMarkup c <|> singleDelimitedMarkup c
+  where
+    singleDelimitedMarkup :: Char -> Parser [Inline]
+    singleDelimitedMarkup c = try $ do
+        guard =<< notAfterString
+        char c
+        notFollowedBy spaceChar
+        someTill inline (try endChar)
+      where
+        endChar = char c *> (lookAhead $ void (oneOf specialCharacters) <|> eof)
+
+    doubleDelimitedMarkup :: Char -> Parser [Inline]
+    doubleDelimitedMarkup c = try $
+        string [c,c] *> someTill inline (try $ string [c,c])
+
+-- | Parse a single special character.
+symbol :: Parser Inline
+symbol = Str . pack . (:[]) <$> oneOf disallowedStrChars
+
+specialCharacters :: String
+specialCharacters =
+   [ '\t' -- space (whitespace)
+   , ' '  -- space (whitespace)
+   , '\r' -- part of CRLF (hardbreak, softbreak)
+   , '\n' -- line breaks (hardbreak, softbreak)
+   , '+'  -- continuation marker, part of hardbreaks
+   ]
+
+markupDelimiterCharacters :: String
+markupDelimiterCharacters =
+    [ '*'  -- opening/closing character for strong
+    ]
+
+disallowedStrChars :: String
+disallowedStrChars = (specialCharacters ++ markupDelimiterCharacters)

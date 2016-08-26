@@ -32,7 +32,7 @@ module Text.Huskydoc.InlinesSpec
     ) where
 
 import Text.Huskydoc.Inlines
-import Text.Huskydoc.Parsing (Parser, ParseError, parse)
+import Text.Huskydoc.Parsing ( parseDef, (<|>) )
 
 import Data.Text
 import Test.Hspec
@@ -42,30 +42,54 @@ import Test.Hspec.Megaparsec
 main :: IO ()
 main = hspec spec
 
--- | Helper function to test parsers, sets source name to the empty string.
-parse' :: Parser a -> Text -> Either ParseError a
-parse' p txt = parse p "" txt
-
+-- | Specifications for Inlines parsing functions.
 spec :: Spec
 spec = do
     describe "soft linebreaks parser" $ do
         it "parses crlf" $ do
-            parse' softbreak "\r\n" `shouldParse` SoftBreak
+            parseDef softbreak "\r\n" `shouldParse` SoftBreak
         it "parses linefeed" $ do
-            parse' softbreak "\n" `shouldParse` SoftBreak
+            parseDef softbreak "\n" `shouldParse` SoftBreak
         it "allows spaces before linefeed" $ do
-            parse' softbreak "   \n" `shouldParse` SoftBreak
+            parseDef softbreak "   \n" `shouldParse` SoftBreak
 
     describe "hard linebreaks parser" $ do
         it "parses spaces, continuation char `+`, and crlf" $ do
-            parse' hardbreak " +\r\n" `shouldParse` LineBreak
+            parseDef hardbreak " +\r\n" `shouldParse` LineBreak
         it "parses spaces,  continuation char `+`, and linefeed" $ do
-            parse' hardbreak "    +\n" `shouldParse` LineBreak
+            parseDef hardbreak "    +\n" `shouldParse` LineBreak
 
     describe "string parser" $ do
         it "parses normal string" $ do
-            parse' str "hello" `shouldParse` (Str "hello")
+            parseDef str "hello" `shouldParse` (Str "hello")
         it "fails on newline" $ do
-            parse' str `shouldFailOn` "\n"
+            parseDef str `shouldFailOn` "\n"
         it "fails on empty string" $ do
-            parse' str `shouldFailOn` ""
+            parseDef str `shouldFailOn` ""
+        it "stops before `+` characters" $
+            parseDef str "ab+c" `shouldParse` (Str "ab")
+
+    describe "symbol parser" $ do
+        it "parses a `+` character" $
+            parseDef symbol "+" `shouldParse` (Str "+")
+        it "fails on an alphanum character" $ do
+            parseDef symbol `shouldFailOn` "a"
+            parseDef symbol `shouldFailOn` "1"
+
+    describe "strong parser" $ do
+        it "parses text between asterisks as strong" $
+            parseDef strong "*strong*" `shouldParse` (Strong [Str "strong"])
+        it "fails if opening underscore is followed by space" $
+            parseDef strong `shouldFailOn` "* not strong*"
+        it "fails if right after string" $ do
+            parseDef (str *> strong) `shouldFailOn` "str*strong*"
+        it "fails if its follow by a string" $
+            parseDef (strong *> str) `shouldFailOn` "*strong*str"
+        it "doesn't consume anything if it fails" $ do
+            parseDef (strong <|> symbol) "*notStrong" `shouldParse` (Str "*")
+            parseDef (strong <|> symbol *> symbol *> str) "**notStrong"
+                     `shouldParse` (Str "notStrong")
+        it "parses text delimited by double underscore as strong" $
+            parseDef strong "**strong**" `shouldParse` (Strong [Str "strong"])
+        it "parses double-delimited text even if preceded by string" $
+            parseDef (str *> strong) "str**strong**" `shouldParse` (Strong [Str "strong"])

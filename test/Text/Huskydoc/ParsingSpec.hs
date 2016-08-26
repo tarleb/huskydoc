@@ -33,44 +33,40 @@ import Text.Huskydoc.Parsing
 import Data.Text
 import Test.Hspec
 import Test.Hspec.Megaparsec
-import Text.Megaparsec ( parse )
 
 -- | Run this spec.
 main :: IO ()
 main = hspec spec
 
--- | Helper function to test parsers, sets source name to the empty string.
-parse' :: Parser a -> Text -> Either ParseError a
-parse' p txt = parse p "" txt
-
+-- | Specifications for Parsing functions.
 spec :: Spec
 spec = do
     describe "spaceChar parser" $ do
         it "parses tab" $ do
-            parse' spaceChar "\t" `shouldParse` '\t'
+            parseDef spaceChar "\t" `shouldParse` '\t'
         it "parses space" $ do
-            parse' spaceChar " " `shouldParse` ' '
+            parseDef spaceChar " " `shouldParse` ' '
         it "doesn't parse newline characters" $ do
-            parse' spaceChar `shouldFailOn` "\n"
+            parseDef spaceChar `shouldFailOn` "\n"
 
     describe "skipSpaces" $ do
         it "parses single space char" $ do
-            parse' skipSpaces `shouldSucceedOn` " "
+            parseDef skipSpaces `shouldSucceedOn` " "
         it "parses many tabs and spaces" $ do
-            parse' skipSpaces `shouldSucceedOn` "  \t  \t\t"
+            parseDef skipSpaces `shouldSucceedOn` "  \t  \t\t"
         it "succeeds on empty string" $ do
-            parse' skipSpaces `shouldSucceedOn` ""
+            parseDef skipSpaces `shouldSucceedOn` ""
 
     describe "someSpaces" $ do
         it "parses single space char" $ do
-            parse' someSpaces `shouldSucceedOn` " "
+            parseDef someSpaces `shouldSucceedOn` " "
         it "parses many tabs and spaces" $ do
-            parse' someSpaces `shouldSucceedOn` "  \t  \t\t"
+            parseDef someSpaces `shouldSucceedOn` "  \t  \t\t"
         it "fails on empty string" $ do
-            parse' someSpaces `shouldFailOn` ""
+            parseDef someSpaces `shouldFailOn` ""
 
     describe "blankline" $ do
         it "parses empty line plus final newline" $ do
-            parse' blankline `shouldSucceedOn`" \n"
+            parseDef blankline `shouldSucceedOn`" \n"
         it "fails on non-empty line" $ do
-            parse' blankline `shouldFailOn` "   a \n"
+            parseDef blankline `shouldFailOn` "   a \n"
