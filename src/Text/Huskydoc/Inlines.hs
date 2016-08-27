@@ -29,6 +29,7 @@ module Text.Huskydoc.Inlines
     ( Inline (..)
     , inline
     -- Single inline parsers
+    , emphasis
     , hardbreak
     , softbreak
     , str
@@ -43,7 +44,8 @@ import Data.Text
 
 -- | Inline text types.
 data Inline =
-      LineBreak
+      Emphasis [Inline]
+    | LineBreak
     | SoftBreak
     | Space
     | Str Text
@@ -57,6 +59,7 @@ inline = choice
          , whitespace
          , softbreak
          , strong
+         , emphasis
          , str
          , symbol
          ] <?> "inline"
@@ -81,8 +84,13 @@ str = Str . pack <$> some (noneOf disallowedStrChars) <* markEndOfStr
 strong :: Parser Inline
 strong = Strong <$> delimitedMarkup '*'
 
+-- | Parse text marked-up as emphasized
+emphasis :: Parser Inline
+emphasis = Emphasis <$> delimitedMarkup '_'
+
 delimitedMarkup :: Char -> Parser [Inline]
-delimitedMarkup c = doubleDelimitedMarkup c <|> singleDelimitedMarkup c
+delimitedMarkup c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
+                    <* markEndOfDelimitedElement
   where
     singleDelimitedMarkup :: Char -> Parser [Inline]
     singleDelimitedMarkup c = try $ do
@@ -91,7 +99,10 @@ delimitedMarkup c = doubleDelimitedMarkup c <|> singleDelimitedMarkup c
         notFollowedBy spaceChar
         someTill inline (try endChar)
       where
-        endChar = char c *> (lookAhead $ void (oneOf specialCharacters) <|> eof)
+        endChar = do
+          guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
+          char c
+          notFollowedBy alphaNumChar <|> eof
 
     doubleDelimitedMarkup :: Char -> Parser [Inline]
     doubleDelimitedMarkup c = try $
@@ -103,16 +114,17 @@ symbol = Str . pack . (:[]) <$> oneOf disallowedStrChars
 
 specialCharacters :: String
 specialCharacters =
-   [ '\t' -- space (whitespace)
-   , ' '  -- space (whitespace)
-   , '\r' -- part of CRLF (hardbreak, softbreak)
-   , '\n' -- line breaks (hardbreak, softbreak)
-   , '+'  -- continuation marker, part of hardbreaks
-   ]
+    [ '\t' -- space (whitespace)
+    , ' '  -- space (whitespace)
+    , '\r' -- part of CRLF (hardbreak, softbreak)
+    , '\n' -- line breaks (hardbreak, softbreak)
+    ]
 
 markupDelimiterCharacters :: String
 markupDelimiterCharacters =
     [ '*'  -- opening/closing character for strong
+    , '_'  -- opening/closing character for emphasis
+    , '+'  -- continuation marker, part of hardbreaks
     ]
 
 disallowedStrChars :: String

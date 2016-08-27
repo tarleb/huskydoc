@@ -79,8 +79,10 @@ spec = do
     describe "strong parser" $ do
         it "parses text between asterisks as strong" $
             parseDef strong "*strong*" `shouldParse` (Strong [Str "strong"])
-        it "fails if opening underscore is followed by space" $
+        it "fails if opening asterisk is succeded by space" $
             parseDef strong `shouldFailOn` "* not strong*"
+        it "fails if closing asterisk is preceded by space" $
+            parseDef strong `shouldFailOn` "*not strong *"
         it "fails if right after string" $ do
             parseDef (str *> strong) `shouldFailOn` "str*strong*"
         it "fails if its follow by a string" $
@@ -89,7 +91,27 @@ spec = do
             parseDef (strong <|> symbol) "*notStrong" `shouldParse` (Str "*")
             parseDef (strong <|> symbol *> symbol *> str) "**notStrong"
                      `shouldParse` (Str "notStrong")
-        it "parses text delimited by double underscore as strong" $
+        it "parses text delimited by double asterisk as strong" $
             parseDef strong "**strong**" `shouldParse` (Strong [Str "strong"])
         it "parses double-delimited text even if preceded by string" $
             parseDef (str *> strong) "str**strong**" `shouldParse` (Strong [Str "strong"])
+
+    describe "emphasis parser" $ do
+        it "parses text between underscores as emphasized" $
+            parseDef emphasis "_emph_" `shouldParse` (Emphasis [Str "emph"])
+        it "treats umlaut characters as alpha-numeric" $
+            parseDef (emphasis *> str) `shouldFailOn` "_nope_ä"
+
+    describe "nested inlines" $ do
+        it "allows emphasis to be nested in strong text" $
+            parseDef strong "*__nested__*" `shouldParse` (Strong [Emphasis [Str "nested"]])
+        it "allows strong to be nested in emphasized text" $
+            parseDef emphasis "_*nested*_" `shouldParse` (Emphasis [Strong [Str "nested"]])
+
+    describe "inlines in succession" $ do
+        it "parses emphasized directly succeded by strong text" $
+            parseDef (emphasis *> strong) "_emph_*strong*" `shouldParse` (Strong [Str "strong"])
+        it "parses strong directly succeded by emphasized text" $
+            parseDef (strong *> emphasis) "*strong*_emph_" `shouldParse` (Emphasis [Str "emph"])
+
+            

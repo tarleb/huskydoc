@@ -28,7 +28,10 @@ Tests for the Parsing module.
 module Text.Huskydoc.Parsing
     ( ParserState (..)
     , blankline
+    , isAfterString
+    , isAfterDelimitedElement
     , markEndOfStr
+    , markEndOfDelimitedElement
     , notAfterString
     , parseDef
     , skipSpaces
@@ -52,11 +55,15 @@ type Parser = ParsecT Text (TransState.State ParserState)
 -- | Parser state
 data ParserState = ParserState
     { stateLastStrPos :: Maybe SourcePos -- ^ End position of the last Str
+    , stateLastDelimitedElementPos :: Maybe SourcePos -- ^ End of the last
+                                                      -- element delimited by
+                                                      -- markup characters
     }
 
 instance Default ParserState where
     def = ParserState
           { stateLastStrPos = Nothing
+          , stateLastDelimitedElementPos = Nothing
           }
 
 -- | Helper function to test parsers.  This sets the source name to the empty
@@ -72,12 +79,26 @@ markEndOfStr :: Parser ()
 markEndOfStr = modifyLocalState . setLastStrPos =<< getPosition
     where setLastStrPos pos st = st { stateLastStrPos = Just pos }
 
+markEndOfDelimitedElement :: Parser ()
+markEndOfDelimitedElement =
+    modifyLocalState . setLastDelimitedElement =<< getPosition
+  where setLastDelimitedElement pos st =
+            st { stateLastDelimitedElementPos = Just pos }
+
 -- | Check whether the parser position is right after a str.
 notAfterString :: Parser Bool
 notAfterString = do
     pos <- getPosition
     st <- lift (stateLastStrPos <$> TransState.get)
     return $ st /= Just pos
+
+isAfterString :: Parser Bool
+isAfterString = do
+    (==) <$> (Just <$> getPosition) <*> lift (stateLastStrPos <$> TransState.get)
+
+isAfterDelimitedElement :: Parser Bool
+isAfterDelimitedElement = do
+    (==) <$> (Just <$> getPosition) <*> lift (stateLastDelimitedElementPos <$> TransState.get)
 
 -- | Parses a space or tab.
 spaceChar :: Parser Char
