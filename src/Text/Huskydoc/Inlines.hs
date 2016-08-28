@@ -23,7 +23,7 @@ Maintainer  :  Albert Krewinkel <tarleb@zeitkraut.de>
 Stability   :  experimental
 Portability :  portable
 
-Tests for the inlines parsers.
+Parsers for inline elements
 -}
 module Text.Huskydoc.Inlines
     ( Inline (..)
@@ -36,8 +36,11 @@ module Text.Huskydoc.Inlines
     , strong
     , symbol
     , whitespace
+    -- helpers
+    , quotedText
     ) where
 
+import Text.Huskydoc.Attributes ( Attributes(..), parseAttributes )
 import Text.Huskydoc.Parsing
 import Control.Monad ( guard, void )
 import Data.Text
@@ -50,7 +53,7 @@ data Inline =
     | Space
     | Str Text
     | Strong [Inline]
-        deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
 
 -- | Parse a single inline element.
 inline :: Parser Inline
@@ -82,31 +85,32 @@ str = Str . pack <$> some (noneOf disallowedStrChars) <* markEndOfStr
 
 -- | Parse text marked-up as strong.
 strong :: Parser Inline
-strong = Strong <$> delimitedMarkup '*'
+strong = Strong <$> quotedText '*'
 
 -- | Parse text marked-up as emphasized
 emphasis :: Parser Inline
-emphasis = Emphasis <$> delimitedMarkup '_'
+emphasis = Emphasis <$> quotedText '_'
 
-delimitedMarkup :: Char -> Parser [Inline]
-delimitedMarkup c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
+quotedText :: Char -> Parser [Inline]
+quotedText c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
                     <* markEndOfDelimitedElement
   where
     singleDelimitedMarkup :: Char -> Parser [Inline]
-    singleDelimitedMarkup c = try $ do
+    singleDelimitedMarkup c' = try $ do
         guard =<< notAfterString
-        char c
+        _ <- optional parseAttributes
+        char c'
         notFollowedBy spaceChar
         someTill inline (try endChar)
       where
         endChar = do
           guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
-          char c
+          char c'
           notFollowedBy alphaNumChar <|> eof
 
     doubleDelimitedMarkup :: Char -> Parser [Inline]
-    doubleDelimitedMarkup c = try $
-        string [c,c] *> someTill inline (try $ string [c,c])
+    doubleDelimitedMarkup c' = try $
+        string [c',c'] *> someTill inline (try $ string [c',c'])
 
 -- | Parse a single special character.
 symbol :: Parser Inline

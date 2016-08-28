@@ -16,7 +16,7 @@ THIS SOFTWARE.
 
 {-# LANGUAGE OverloadedStrings #-}
 {-|
-Module      :  Text.Huskydoc.Inlines
+Module      :  Text.Huskydoc.InlinesSpec
 Copyright   :  © 2016 Albert Krewinkel
 License     :  ISC
 
@@ -101,6 +101,10 @@ spec = do
             parseDef emphasis "_emph_" `shouldParse` (Emphasis [Str "emph"])
         it "treats umlaut characters as alpha-numeric" $
             parseDef (emphasis *> str) `shouldFailOn` "_nope_ä"
+
+    describe "quoted text parser" $ do
+         it "accepts preceding attributes" $
+            parseDef (quotedText '*') `shouldSucceedOn` "[small]*wins*"
 
     describe "nested inlines" $ do
         it "allows emphasis to be nested in strong text" $
