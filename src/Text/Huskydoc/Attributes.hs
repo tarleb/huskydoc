@@ -29,9 +29,13 @@ Parser for element attributes.
 module Text.Huskydoc.Attributes
     ( Attributes (..)
     , Attr (..)
+    , RichElement (..)
     , namedAttr
+    , nullAttributes
     , parseAttributes
+    , plainElement
     , positionalAttr
+    , richElement
     , toAttributes
     ) where
 
@@ -45,10 +49,24 @@ newtype Attributes = Attributes { fromAttributes :: [Attr] }
 toAttributes :: [Attr] -> Attributes
 toAttributes = Attributes
 
+nullAttributes :: Attributes
+nullAttributes = toAttributes []
+
 data Attr = NamedAttr Text Text
           | PositionalAttr Text
           | OptionAttr Text
     deriving (Show, Eq, Ord)
+
+data RichElement a = RichElement
+    { richElementAttributes :: Attributes
+    , richElementContent    :: a
+    } deriving (Eq, Ord, Show)
+
+plainElement :: a -> RichElement a
+plainElement x = RichElement nullAttributes x
+
+richElement :: Attributes -> a -> RichElement a
+richElement = RichElement
 
 simpleNamedAttr :: Text -> Text -> Attr
 simpleNamedAttr k v = NamedAttr k v
@@ -81,4 +99,3 @@ comma = char ','
 
 doubleQuote :: Parser Char
 doubleQuote = char '"'
-

@@ -47,38 +47,38 @@ spec :: Spec
 spec = do
     describe "soft linebreaks parser" $ do
         it "parses crlf" $ do
-            parseDef softbreak "\r\n" `shouldParse` SoftBreak
+            parseDef softbreak "\r\n" `shouldParse` softBreak
         it "parses linefeed" $ do
-            parseDef softbreak "\n" `shouldParse` SoftBreak
+            parseDef softbreak "\n" `shouldParse` softBreak
         it "allows spaces before linefeed" $ do
-            parseDef softbreak "   \n" `shouldParse` SoftBreak
+            parseDef softbreak "   \n" `shouldParse` softBreak
 
     describe "hard linebreaks parser" $ do
         it "parses spaces, continuation char `+`, and crlf" $ do
-            parseDef hardbreak " +\r\n" `shouldParse` LineBreak
+            parseDef hardbreak " +\r\n" `shouldParse` hardBreak
         it "parses spaces,  continuation char `+`, and linefeed" $ do
-            parseDef hardbreak "    +\n" `shouldParse` LineBreak
+            parseDef hardbreak "    +\n" `shouldParse` hardBreak
 
     describe "string parser" $ do
         it "parses normal string" $ do
-            parseDef str "hello" `shouldParse` (Str "hello")
+            parseDef str "hello" `shouldParse` (bstr "hello")
         it "fails on newline" $ do
             parseDef str `shouldFailOn` "\n"
         it "fails on empty string" $ do
             parseDef str `shouldFailOn` ""
         it "stops before `+` characters" $
-            parseDef str "ab+c" `shouldParse` (Str "ab")
+            parseDef str "ab+c" `shouldParse` (bstr "ab")
 
     describe "symbol parser" $ do
         it "parses a `+` character" $
-            parseDef symbol "+" `shouldParse` (Str "+")
+            parseDef symbol "+" `shouldParse` (bstr "+")
         it "fails on an alphanum character" $ do
             parseDef symbol `shouldFailOn` "a"
             parseDef symbol `shouldFailOn` "1"
 
     describe "strong parser" $ do
         it "parses text between asterisks as strong" $
-            parseDef strong "*strong*" `shouldParse` (Strong [Str "strong"])
+            parseDef strong "*strong*" `shouldParse` (bstrong [bstr "strong"])
         it "fails if opening asterisk is succeded by space" $
             parseDef strong `shouldFailOn` "* not strong*"
         it "fails if closing asterisk is preceded by space" $
@@ -88,34 +88,38 @@ spec = do
         it "fails if its follow by a string" $
             parseDef (strong *> str) `shouldFailOn` "*strong*str"
         it "doesn't consume anything if it fails" $ do
-            parseDef (strong <|> symbol) "*notStrong" `shouldParse` (Str "*")
+            parseDef (strong <|> symbol) "*notStrong" `shouldParse` (bstr "*")
             parseDef (strong <|> symbol *> symbol *> str) "**notStrong"
-                     `shouldParse` (Str "notStrong")
+                     `shouldParse` (bstr "notStrong")
         it "parses text delimited by double asterisk as strong" $
-            parseDef strong "**strong**" `shouldParse` (Strong [Str "strong"])
+            parseDef strong "**strong**" `shouldParse` (bstrong [bstr "strong"])
         it "parses double-delimited text even if preceded by string" $
-            parseDef (str *> strong) "str**strong**" `shouldParse` (Strong [Str "strong"])
+            parseDef (str *> strong) "str**strong**" `shouldParse` (bstrong [bstr "strong"])
 
     describe "emphasis parser" $ do
         it "parses text between underscores as emphasized" $
-            parseDef emphasis "_emph_" `shouldParse` (Emphasis [Str "emph"])
+            parseDef emphasis "_emph_" `shouldParse` (bemphasis [bstr "emph"])
         it "treats umlaut characters as alpha-numeric" $
             parseDef (emphasis *> str) `shouldFailOn` "_nope_ä"
 
-    describe "quoted text parser" $ do
-         it "accepts preceding attributes" $
-            parseDef (quotedText '*') `shouldSucceedOn` "[small]*wins*"
+    -- describe "quoted text parser" $ do
+    --      it "accepts preceding attributes" $
+    --         parseDef (quotedText '*') `shouldSucceedOn` "[small]*wins*"
 
     describe "nested inlines" $ do
         it "allows emphasis to be nested in strong text" $
-            parseDef strong "*__nested__*" `shouldParse` (Strong [Emphasis [Str "nested"]])
+            parseDef strong "*__nested__*" `shouldParse` (bstrong [bemphasis [bstr "nested"]])
         it "allows strong to be nested in emphasized text" $
-            parseDef emphasis "_*nested*_" `shouldParse` (Emphasis [Strong [Str "nested"]])
+            parseDef emphasis "_*nested*_" `shouldParse` (bemphasis [bstrong [bstr "nested"]])
 
     describe "inlines in succession" $ do
         it "parses emphasized directly succeded by strong text" $
-            parseDef (emphasis *> strong) "_emph_*strong*" `shouldParse` (Strong [Str "strong"])
+            parseDef (emphasis *> strong) "_emph_*strong*" `shouldParse` (bstrong [bstr "strong"])
         it "parses strong directly succeded by emphasized text" $
-            parseDef (strong *> emphasis) "*strong*_emph_" `shouldParse` (Emphasis [Str "emph"])
+            parseDef (strong *> emphasis) "*strong*_emph_" `shouldParse` (bemphasis [bstr "emph"])
+
+    describe "inlineElement parser" $ do
+        it "doesn't parse blank lines" $ do
+            parseDef inlineElement `shouldFailOn` "\n\n"
 
             

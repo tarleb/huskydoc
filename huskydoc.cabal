@@ -20,6 +20,7 @@ library
                      , Text.Huskydoc.Inlines
                      , Text.Huskydoc.Parsing
   build-depends:       base             >= 4.7 && < 5
+                     , containers       >= 0.1 && < 0.6
                      , data-default     >= 0.4 && < 0.8
                      , megaparsec       >= 4.4 && < 5.1
                      , text             >= 1.2 && < 1.3

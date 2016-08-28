@@ -27,7 +27,10 @@ Parsers for inline elements
 -}
 module Text.Huskydoc.Inlines
     ( Inline (..)
-    , inline
+    , InlineElement
+    , Inlines (..)
+    , inlineElement
+    , inlines
     -- Single inline parsers
     , emphasis
     , hardbreak
@@ -36,28 +39,47 @@ module Text.Huskydoc.Inlines
     , strong
     , symbol
     , whitespace
+    -- builders
+    , softBreak
+    , hardBreak
+    , bstr
+    , bstrong
+    , strongWith
+    , bemphasis
+    , emphasisWith
     -- helpers
     , quotedText
     ) where
 
-import Text.Huskydoc.Attributes ( Attributes(..), parseAttributes )
-import Text.Huskydoc.Parsing
-import Control.Monad ( guard, void )
-import Data.Text
+import           Text.Huskydoc.Attributes
+import           Text.Huskydoc.Parsing
+import           Control.Monad ( guard, void )
+import           Data.Maybe ( fromMaybe )
+import           Data.Sequence ( Seq )
+import qualified Data.Sequence as Seq
+import           Data.Text
 
 -- | Inline text types.
 data Inline =
-      Emphasis [Inline]
+      Emphasis [InlineElement]
     | LineBreak
     | SoftBreak
     | Space
     | Str Text
-    | Strong [Inline]
+    | Strong [InlineElement]
     deriving (Show, Eq, Ord)
 
+type InlineElement = RichElement Inline
+
+newtype Inlines = Inlines { fromInlines :: Seq InlineElement }
+    deriving (Show, Eq, Ord)
+
+inlines :: Parser Inlines
+inlines = Inlines . Seq.fromList <$> some inlineElement
+
 -- | Parse a single inline element.
-inline :: Parser Inline
-inline = choice
+inlineElement :: Parser InlineElement
+inlineElement = choice
          [ hardbreak
          , whitespace
          , softbreak
@@ -65,56 +87,87 @@ inline = choice
          , emphasis
          , str
          , symbol
-         ] <?> "inline"
+         ] <?> "inline element"
+
+--
+-- Builders
+--
+
+bstrong :: [InlineElement] -> InlineElement
+bstrong = plainElement . Strong
+
+strongWith :: Attributes -> [InlineElement] -> InlineElement
+strongWith a es = richElement a (Strong es)
+
+bemphasis :: [InlineElement] -> InlineElement
+bemphasis = plainElement . Emphasis
+
+emphasisWith :: Attributes -> [InlineElement] -> InlineElement
+emphasisWith a es = richElement a (Emphasis es)
+
+bstr :: Text -> InlineElement
+bstr = plainElement . Str
+
+softBreak :: InlineElement
+softBreak = plainElement SoftBreak
+
+hardBreak :: InlineElement
+hardBreak = plainElement LineBreak
 
 -- | Parse one or more whitespace characters (i.e. tabs or spaces).
-whitespace :: Parser Inline
-whitespace = Space <$ someSpaces
+whitespace :: Parser InlineElement
+whitespace = plainElement Space <$ someSpaces
 
 -- | Parse a hard linebreak.
-hardbreak :: Parser Inline
-hardbreak = LineBreak <$ try (someSpaces *> char '+' *> skipSpaces *> eol)
+hardbreak :: Parser InlineElement
+hardbreak = plainElement LineBreak
+            <$ try (someSpaces *> char '+' *> skipSpaces *> eol)
 
 -- | Parse a soft linebreak.
-softbreak :: Parser Inline
-softbreak = SoftBreak <$ try (skipSpaces *> void eol *> notFollowedBy blankline)
+softbreak :: Parser InlineElement
+softbreak = plainElement SoftBreak
+            <$ try (skipSpaces *> void eol *> notFollowedBy blankline)
 
 -- | Parse a simple, markup-less string.
-str :: Parser Inline
-str = Str . pack <$> some (noneOf disallowedStrChars) <* markEndOfStr
+str :: Parser InlineElement
+str = bstr . pack <$> some (noneOf disallowedStrChars) <* markEndOfStr
 
 -- | Parse text marked-up as strong.
-strong :: Parser Inline
-strong = Strong <$> quotedText '*'
+strong :: Parser InlineElement
+strong = quotedText Strong '*'
 
 -- | Parse text marked-up as emphasized
-emphasis :: Parser Inline
-emphasis = Emphasis <$> quotedText '_'
+emphasis :: Parser InlineElement
+emphasis = quotedText Emphasis '_'
 
-quotedText :: Char -> Parser [Inline]
-quotedText c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
+quotedText :: ([InlineElement] -> Inline) -> Char -> Parser InlineElement
+quotedText constr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
                     <* markEndOfDelimitedElement
   where
-    singleDelimitedMarkup :: Char -> Parser [Inline]
+    singleDelimitedMarkup :: Char -> Parser InlineElement
     singleDelimitedMarkup c' = try $ do
         guard =<< notAfterString
-        _ <- optional parseAttributes
+        attributes <- optional parseAttributes
         char c'
         notFollowedBy spaceChar
-        someTill inline (try endChar)
+        element <- constr <$> someTill inlineElement (try endChar)
+        return $ richElement (fromMaybe nullAttributes attributes) element
       where
         endChar = do
           guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
           char c'
           notFollowedBy alphaNumChar <|> eof
 
-    doubleDelimitedMarkup :: Char -> Parser [Inline]
-    doubleDelimitedMarkup c' = try $
-        string [c',c'] *> someTill inline (try $ string [c',c'])
+    doubleDelimitedMarkup :: Char -> Parser InlineElement
+    doubleDelimitedMarkup c' = try $ do
+        attributes <- optional parseAttributes
+        string [c',c']
+        element <- constr <$> someTill inlineElement (try $ string [c',c'])
+        return $ richElement (fromMaybe nullAttributes attributes) element
 
 -- | Parse a single special character.
-symbol :: Parser Inline
-symbol = Str . pack . (:[]) <$> oneOf disallowedStrChars
+symbol :: Parser InlineElement
+symbol = bstr . pack . (:[]) <$> oneOf markupDelimiterCharacters
 
 specialCharacters :: String
 specialCharacters =
