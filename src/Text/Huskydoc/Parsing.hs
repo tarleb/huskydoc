@@ -42,12 +42,12 @@ module Text.Huskydoc.Parsing
     , module Text.Megaparsec
     ) where
 
-import           Control.Monad ( liftM, void )
+import           Control.Monad ( void )
 import qualified Control.Monad.Trans.State as TransState
 import           Control.Monad.Trans.Class (lift)
 import           Data.Default ( Default(..) )
 import           Data.Text
-import           Text.Megaparsec hiding ( Parser, spaceChar, spaces )
+import           Text.Megaparsec hiding ( spaceChar )
 
 type Parser = ParsecT Text (TransState.State ParserState)
 -- type Parser = TransState.StateT ParserState (ParsecT Text (Either ParseError))
