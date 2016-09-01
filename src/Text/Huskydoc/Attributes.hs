@@ -40,45 +40,8 @@ module Text.Huskydoc.Attributes
     ) where
 
 import Text.Huskydoc.Parsing
+import Text.Huskydoc.Types
 import Data.Text
-
--- | Element attributes
-newtype Attributes = Attributes { fromAttributes :: [Attr] }
-    deriving (Show, Eq, Ord)
-
-toAttributes :: [Attr] -> Attributes
-toAttributes = Attributes
-
-nullAttributes :: Attributes
-nullAttributes = toAttributes []
-
-data Attr = NamedAttr Text Text
-          | PositionalAttr Text
-          | OptionAttr Text
-    deriving (Show, Eq, Ord)
-
-data RichElement a = RichElement
-    { richElementAttributes :: Attributes
-    , richElementContent    :: a
-    } deriving (Eq, Ord, Show)
-
-plainElement :: a -> RichElement a
-plainElement x = RichElement nullAttributes x
-
-richElement :: Attributes -> a -> RichElement a
-richElement = RichElement
-
-simpleNamedAttr :: Text -> Text -> Attr
-simpleNamedAttr k v = NamedAttr k v
-
--- data AttrValue = AttrSimpleValue Text
---                | AttrListValue [Text]
--- roleAttr :: Text -> Attr
--- roleAttr t = simpleNamedAttr "role" t
--- idAttr :: Text -> Attr
--- idAttr t = simpleNamedAttr "id" t
--- optionAttr :: Text -> Attr
--- optionAttr t = simpleNamedAttr "option" t
 
 parseAttributes :: Parser Attributes
 parseAttributes =

@@ -17,8 +17,10 @@ library
   hs-source-dirs:      src
   exposed-modules:     Text.Huskydoc
                      , Text.Huskydoc.Attributes
+                     , Text.Huskydoc.Builders
                      , Text.Huskydoc.Inlines
                      , Text.Huskydoc.Parsing
+                     , Text.Huskydoc.Types
   build-depends:       base             >= 4.7 && < 5
                      , containers       >= 0.1 && < 0.6
                      , data-default     >= 0.4 && < 0.8

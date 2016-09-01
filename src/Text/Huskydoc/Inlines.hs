@@ -39,40 +39,18 @@ module Text.Huskydoc.Inlines
     , strong
     , symbol
     , whitespace
-    -- builders
-    , softBreak
-    , hardBreak
-    , bstr
-    , bstrong
-    , strongWith
-    , bemphasis
-    , emphasisWith
     -- helpers
     , quotedText
     ) where
 
 import           Text.Huskydoc.Attributes
+import qualified Text.Huskydoc.Builders as B
 import           Text.Huskydoc.Parsing
+import           Text.Huskydoc.Types
 import           Control.Monad ( guard, void )
 import           Data.Maybe ( fromMaybe )
-import           Data.Sequence ( Seq )
 import qualified Data.Sequence as Seq
 import           Data.Text
-
--- | Inline text types.
-data Inline =
-      Emphasis [InlineElement]
-    | LineBreak
-    | SoftBreak
-    | Space
-    | Str Text
-    | Strong [InlineElement]
-    deriving (Show, Eq, Ord)
-
-type InlineElement = RichElement Inline
-
-newtype Inlines = Inlines { fromInlines :: Seq InlineElement }
-    deriving (Show, Eq, Ord)
 
 inlines :: Parser Inlines
 inlines = Inlines . Seq.fromList <$> some inlineElement
@@ -88,31 +66,6 @@ inlineElement = choice
          , str
          , symbol
          ] <?> "inline element"
-
---
--- Builders
---
-
-bstrong :: [InlineElement] -> InlineElement
-bstrong = plainElement . Strong
-
-strongWith :: Attributes -> [InlineElement] -> InlineElement
-strongWith a es = richElement a (Strong es)
-
-bemphasis :: [InlineElement] -> InlineElement
-bemphasis = plainElement . Emphasis
-
-emphasisWith :: Attributes -> [InlineElement] -> InlineElement
-emphasisWith a es = richElement a (Emphasis es)
-
-bstr :: Text -> InlineElement
-bstr = plainElement . Str
-
-softBreak :: InlineElement
-softBreak = plainElement SoftBreak
-
-hardBreak :: InlineElement
-hardBreak = plainElement LineBreak
 
 -- | Parse one or more whitespace characters (i.e. tabs or spaces).
 whitespace :: Parser InlineElement
@@ -130,18 +83,20 @@ softbreak = plainElement SoftBreak
 
 -- | Parse a simple, markup-less string.
 str :: Parser InlineElement
-str = bstr . pack <$> some (noneOf disallowedStrChars) <* markEndOfStr
+str = B.str . pack <$> some (noneOf disallowedStrChars) <* markEndOfStr
 
 -- | Parse text marked-up as strong.
 strong :: Parser InlineElement
-strong = quotedText Strong '*'
+strong = quotedText B.strongWith '*'
 
 -- | Parse text marked-up as emphasized
 emphasis :: Parser InlineElement
-emphasis = quotedText Emphasis '_'
+emphasis = quotedText B.emphasisWith '_'
 
-quotedText :: ([InlineElement] -> Inline) -> Char -> Parser InlineElement
-quotedText constr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
+quotedText :: (Attributes -> [InlineElement] -> InlineElement)
+           -> Char
+           -> Parser InlineElement
+quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
                     <* markEndOfDelimitedElement
   where
     singleDelimitedMarkup :: Char -> Parser InlineElement
@@ -150,8 +105,8 @@ quotedText constr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
         attributes <- optional parseAttributes
         char c'
         notFollowedBy spaceChar
-        element <- constr <$> someTill inlineElement (try endChar)
-        return $ richElement (fromMaybe nullAttributes attributes) element
+        element <- someTill inlineElement (try endChar)
+        return $ bldr (fromMaybe nullAttributes attributes) element
       where
         endChar = do
           guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
@@ -162,12 +117,12 @@ quotedText constr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
     doubleDelimitedMarkup c' = try $ do
         attributes <- optional parseAttributes
         string [c',c']
-        element <- constr <$> someTill inlineElement (try $ string [c',c'])
-        return $ richElement (fromMaybe nullAttributes attributes) element
+        element <- someTill inlineElement (try $ string [c',c'])
+        return $ bldr (fromMaybe nullAttributes attributes) element
 
 -- | Parse a single special character.
 symbol :: Parser InlineElement
-symbol = bstr . pack . (:[]) <$> oneOf markupDelimiterCharacters
+symbol = B.str . pack . (:[]) <$> oneOf markupDelimiterCharacters
 
 specialCharacters :: String
 specialCharacters =
