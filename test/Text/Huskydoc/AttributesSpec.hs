@@ -27,9 +27,9 @@ Portability :  portable
 Tests for the attribute parsers.
 -}
 module Text.Huskydoc.AttributesSpec
-    ( main
-    , spec
-    ) where
+  ( main
+  , spec
+  ) where
 
 import Text.Huskydoc.Attributes
 import Text.Huskydoc.Parsing ( parseDef )
@@ -44,34 +44,34 @@ main = hspec spec
 -- | Specifications for Attributes parsing functions.
 spec :: Spec
 spec = do
-    describe "nameAttr" $ do
-        it "parses a simple named attribute" $ do
-            parseDef namedAttr "foo=\"bar\"" `shouldParse` (NamedAttr "foo" "bar")
+  describe "nameAttr" $ do
+    it "parses a simple named attribute" $ do
+      parseDef namedAttr "foo=\"bar\"" `shouldParse` (NamedAttr "foo" "bar")
 
-    describe "positionalAttr" $ do
-        it "parses a space-less word" $ do
-            parseDef positionalAttr "verse" `shouldParse` (PositionalAttr "verse")
-        it "strips surrounding spaces" $ do
-            parseDef positionalAttr "  verse  " `shouldParse` (PositionalAttr "verse")
+  describe "positionalAttr" $ do
+    it "parses a space-less word" $ do
+      parseDef positionalAttr "verse" `shouldParse` (PositionalAttr "verse")
+    it "strips surrounding spaces" $ do
+      parseDef positionalAttr "  verse  " `shouldParse` (PositionalAttr "verse")
 
-    describe "parseAttributes" $ do
-        it "parses a single positional attribute" $ do
-            parseDef parseAttributes "[verse]"
-                 `shouldParse` (toAttributes [PositionalAttr "verse"])
-        it "parses a single named attribute" $ do
-            parseDef parseAttributes "[role=\"verse\"]"
-                `shouldParse` (toAttributes [NamedAttr "role" "verse"])
-        it "parses a many comma-separated positional attributes" $ do
-            parseDef parseAttributes "[verse,rick, roll ]" `shouldParse`
-                (toAttributes
-                 [ PositionalAttr "verse"
-                 , PositionalAttr "rick"
-                 , PositionalAttr "roll"
-                 ])
-        it "parses a many comma-separated named attributes" $ do
-            parseDef parseAttributes "[quality=\"medium\", summer=\"hot\", drinks=\"cool\"]"
-                `shouldParse` (toAttributes
-                     [ NamedAttr "quality" "medium"
-                     , NamedAttr "summer" "hot"
-                     , NamedAttr "drinks" "cool"
-                     ])
+  describe "parseAttributes" $ do
+    it "parses a single positional attribute" $ do
+      parseDef parseAttributes "[verse]"
+        `shouldParse` (toAttributes [PositionalAttr "verse"])
+    it "parses a single named attribute" $ do
+      parseDef parseAttributes "[role=\"verse\"]"
+        `shouldParse` (toAttributes [NamedAttr "role" "verse"])
+    it "parses a many comma-separated positional attributes" $ do
+      parseDef parseAttributes "[verse,rick, roll ]" `shouldParse`
+        (toAttributes
+         [ PositionalAttr "verse"
+         , PositionalAttr "rick"
+         , PositionalAttr "roll"
+         ])
+    it "parses a many comma-separated named attributes" $ do
+      parseDef parseAttributes "[quality=\"medium\", summer=\"hot\", drinks=\"cool\"]"
+        `shouldParse` (toAttributes
+           [ NamedAttr "quality" "medium"
+           , NamedAttr "summer" "hot"
+           , NamedAttr "drinks" "cool"
+           ])

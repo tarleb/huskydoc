@@ -27,17 +27,17 @@ Portability :  portable
 Parser for element attributes.
 -}
 module Text.Huskydoc.Attributes
-    ( Attributes (..)
-    , Attr (..)
-    , RichElement (..)
-    , namedAttr
-    , nullAttributes
-    , parseAttributes
-    , plainElement
-    , positionalAttr
-    , richElement
-    , toAttributes
-    ) where
+  ( Attributes (..)
+  , Attr (..)
+  , RichElement (..)
+  , namedAttr
+  , nullAttributes
+  , parseAttributes
+  , plainElement
+  , positionalAttr
+  , richElement
+  , toAttributes
+  ) where
 
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Types

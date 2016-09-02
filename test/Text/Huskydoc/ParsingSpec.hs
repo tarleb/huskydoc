@@ -24,9 +24,9 @@ Stability   :  experimental
 Portability :  portable
 -}
 module Text.Huskydoc.ParsingSpec
-    ( main
-    , spec
-    ) where
+  ( main
+  , spec
+  ) where
 
 import Text.Huskydoc.Parsing
 
@@ -41,32 +41,32 @@ main = hspec spec
 -- | Specifications for Parsing functions.
 spec :: Spec
 spec = do
-    describe "spaceChar parser" $ do
-        it "parses tab" $ do
-            parseDef spaceChar "\t" `shouldParse` '\t'
-        it "parses space" $ do
-            parseDef spaceChar " " `shouldParse` ' '
-        it "doesn't parse newline characters" $ do
-            parseDef spaceChar `shouldFailOn` "\n"
+  describe "spaceChar parser" $ do
+    it "parses tab" $ do
+      parseDef spaceChar "\t" `shouldParse` '\t'
+    it "parses space" $ do
+      parseDef spaceChar " " `shouldParse` ' '
+    it "doesn't parse newline characters" $ do
+      parseDef spaceChar `shouldFailOn` "\n"
 
-    describe "skipSpaces" $ do
-        it "parses single space char" $ do
-            parseDef skipSpaces `shouldSucceedOn` " "
-        it "parses many tabs and spaces" $ do
-            parseDef skipSpaces `shouldSucceedOn` "  \t  \t\t"
-        it "succeeds on empty string" $ do
-            parseDef skipSpaces `shouldSucceedOn` ""
+  describe "skipSpaces" $ do
+    it "parses single space char" $ do
+      parseDef skipSpaces `shouldSucceedOn` " "
+    it "parses many tabs and spaces" $ do
+      parseDef skipSpaces `shouldSucceedOn` "  \t  \t\t"
+    it "succeeds on empty string" $ do
+      parseDef skipSpaces `shouldSucceedOn` ""
 
-    describe "someSpaces" $ do
-        it "parses single space char" $ do
-            parseDef someSpaces `shouldSucceedOn` " "
-        it "parses many tabs and spaces" $ do
-            parseDef someSpaces `shouldSucceedOn` "  \t  \t\t"
-        it "fails on empty string" $ do
-            parseDef someSpaces `shouldFailOn` ""
+  describe "someSpaces" $ do
+    it "parses single space char" $ do
+      parseDef someSpaces `shouldSucceedOn` " "
+    it "parses many tabs and spaces" $ do
+      parseDef someSpaces `shouldSucceedOn` "  \t  \t\t"
+    it "fails on empty string" $ do
+      parseDef someSpaces `shouldFailOn` ""
 
-    describe "blankline" $ do
-        it "parses empty line plus final newline" $ do
-            parseDef blankline `shouldSucceedOn`" \n"
-        it "fails on non-empty line" $ do
-            parseDef blankline `shouldFailOn` "   a \n"
+  describe "blankline" $ do
+    it "parses empty line plus final newline" $ do
+      parseDef blankline `shouldSucceedOn`" \n"
+    it "fails on non-empty line" $ do
+      parseDef blankline `shouldFailOn` "   a \n"

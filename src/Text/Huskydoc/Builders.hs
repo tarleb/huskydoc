@@ -26,21 +26,21 @@ Portability :  portable
 Builders for Huskydoc elements
 -}
 module Text.Huskydoc.Builders
-    ( toInlines
-    -- inline elements
-    , emphasis
-    , emphasisWith
-    , hardBreak
-    , softBreak
-    , space
-    , str
-    , strong
-    , strongWith
-    -- blocks
-    , paragraph
-    , paragraphWith
-    , paragraphWith'
-    ) where
+  ( toInlines
+  -- inline elements
+  , emphasis
+  , emphasisWith
+  , hardBreak
+  , softBreak
+  , space
+  , str
+  , strong
+  , strongWith
+  -- blocks
+  , paragraph
+  , paragraphWith
+  , paragraphWith'
+  ) where
 
 import           Data.Maybe (fromMaybe)
 import qualified Data.Sequence as Seq

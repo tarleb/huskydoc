@@ -26,21 +26,21 @@ Portability :  portable
 Tests for the Parsing module.
 -}
 module Text.Huskydoc.Parsing
-    ( ParserState (..)
-    , blankline
-    , isAfterString
-    , isAfterDelimitedElement
-    , markEndOfStr
-    , markEndOfDelimitedElement
-    , notAfterString
-    , parseDef
-    , skipSpaces
-    , someSpaces
-    , spaceChar
-    -- Re-export Megaparsec types
-    , Parser
-    , module Text.Megaparsec
-    ) where
+  ( ParserState (..)
+  , blankline
+  , isAfterString
+  , isAfterDelimitedElement
+  , markEndOfStr
+  , markEndOfDelimitedElement
+  , notAfterString
+  , parseDef
+  , skipSpaces
+  , someSpaces
+  , spaceChar
+  -- Re-export Megaparsec types
+  , Parser
+  , module Text.Megaparsec
+  ) where
 
 import           Control.Monad ( void )
 import qualified Control.Monad.Trans.State as TransState
@@ -54,17 +54,17 @@ type Parser = ParsecT Text (TransState.State ParserState)
 
 -- | Parser state
 data ParserState = ParserState
-    { stateLastStrPos :: Maybe SourcePos -- ^ End position of the last Str
-    , stateLastDelimitedElementPos :: Maybe SourcePos -- ^ End of the last
-                                                      -- element delimited by
-                                                      -- markup characters
-    }
+  { stateLastStrPos :: Maybe SourcePos -- ^ End position of the last Str
+  , stateLastDelimitedElementPos :: Maybe SourcePos -- ^ End of the last
+                                                    -- element delimited by
+                                                    -- markup characters
+  }
 
 instance Default ParserState where
-    def = ParserState
-          { stateLastStrPos = Nothing
-          , stateLastDelimitedElementPos = Nothing
-          }
+  def = ParserState
+        { stateLastStrPos = Nothing
+        , stateLastDelimitedElementPos = Nothing
+        }
 
 -- | Helper function to test parsers.  This sets the source name to the empty
 --   string and uses the default parser state.
@@ -77,28 +77,28 @@ modifyLocalState = lift . TransState.modify
 -- | Set end position of last string to current position.
 markEndOfStr :: Parser ()
 markEndOfStr = modifyLocalState . setLastStrPos =<< getPosition
-    where setLastStrPos pos st = st { stateLastStrPos = Just pos }
+  where setLastStrPos pos st = st { stateLastStrPos = Just pos }
 
 markEndOfDelimitedElement :: Parser ()
 markEndOfDelimitedElement =
-    modifyLocalState . setLastDelimitedElement =<< getPosition
+  modifyLocalState . setLastDelimitedElement =<< getPosition
   where setLastDelimitedElement pos st =
             st { stateLastDelimitedElementPos = Just pos }
 
 -- | Check whether the parser position is right after a str.
 notAfterString :: Parser Bool
 notAfterString = do
-    pos <- getPosition
-    st <- lift (stateLastStrPos <$> TransState.get)
-    return $ st /= Just pos
+  pos <- getPosition
+  st <- lift (stateLastStrPos <$> TransState.get)
+  return $ st /= Just pos
 
 isAfterString :: Parser Bool
 isAfterString = do
-    (==) <$> (Just <$> getPosition) <*> lift (stateLastStrPos <$> TransState.get)
+  (==) <$> (Just <$> getPosition) <*> lift (stateLastStrPos <$> TransState.get)
 
 isAfterDelimitedElement :: Parser Bool
 isAfterDelimitedElement = do
-    (==) <$> (Just <$> getPosition) <*> lift (stateLastDelimitedElementPos <$> TransState.get)
+  (==) <$> (Just <$> getPosition) <*> lift (stateLastDelimitedElementPos <$> TransState.get)
 
 -- | Parses a space or tab.
 spaceChar :: Parser Char

@@ -26,19 +26,19 @@ Portability :  portable
 Parsers for inline elements
 -}
 module Text.Huskydoc.Inlines
-    ( inlineElement
-    , inlines
-    -- Single inline parsers
-    , emphasis
-    , hardbreak
-    , softbreak
-    , str
-    , strong
-    , symbol
-    , whitespace
-    -- helpers
-    , quotedText
-    ) where
+  ( inlineElement
+  , inlines
+  -- Single inline parsers
+  , emphasis
+  , hardbreak
+  , softbreak
+  , str
+  , strong
+  , symbol
+  , whitespace
+  -- helpers
+  , quotedText
+  ) where
 
 import           Text.Huskydoc.Attributes
 import qualified Text.Huskydoc.Builders as B
@@ -53,15 +53,16 @@ inlines = B.toInlines <$> some inlineElement
 
 -- | Parse a single inline element.
 inlineElement :: Parser InlineElement
-inlineElement = choice
-         [ hardbreak
-         , whitespace
-         , softbreak
-         , strong
-         , emphasis
-         , str
-         , symbol
-         ] <?> "inline element"
+inlineElement =
+  choice
+  [ hardbreak
+  , whitespace
+  , softbreak
+  , strong
+  , emphasis
+  , str
+  , symbol
+  ] <?> "inline element"
 
 -- | Parse one or more whitespace characters (i.e. tabs or spaces).
 whitespace :: Parser InlineElement
@@ -97,12 +98,12 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
   where
     singleDelimitedMarkup :: Char -> Parser InlineElement
     singleDelimitedMarkup c' = try $ do
-        guard =<< notAfterString
-        attributes <- optional parseAttributes
-        char c'
-        notFollowedBy spaceChar
-        element <- someTill inlineElement (try endChar)
-        return $ bldr (fromMaybe nullAttributes attributes) element
+      guard =<< notAfterString
+      attributes <- optional parseAttributes
+      char c'
+      notFollowedBy spaceChar
+      element <- someTill inlineElement (try endChar)
+      return $ bldr (fromMaybe nullAttributes attributes) element
       where
         endChar = do
           guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
@@ -111,10 +112,10 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
 
     doubleDelimitedMarkup :: Char -> Parser InlineElement
     doubleDelimitedMarkup c' = try $ do
-        attributes <- optional parseAttributes
-        string [c',c']
-        element <- someTill inlineElement (try $ string [c',c'])
-        return $ bldr (fromMaybe nullAttributes attributes) element
+      attributes <- optional parseAttributes
+      string [c',c']
+      element <- someTill inlineElement (try $ string [c',c'])
+      return $ bldr (fromMaybe nullAttributes attributes) element
 
 -- | Parse a single special character.
 symbol :: Parser InlineElement
@@ -122,18 +123,18 @@ symbol = B.str . pack . (:[]) <$> oneOf markupDelimiterCharacters
 
 specialCharacters :: String
 specialCharacters =
-    [ '\t' -- space (whitespace)
-    , ' '  -- space (whitespace)
-    , '\r' -- part of CRLF (hardbreak, softbreak)
-    , '\n' -- line breaks (hardbreak, softbreak)
-    ]
+  [ '\t' -- space (whitespace)
+  , ' '  -- space (whitespace)
+  , '\r' -- part of CRLF (hardbreak, softbreak)
+  , '\n' -- line breaks (hardbreak, softbreak)
+  ]
 
 markupDelimiterCharacters :: String
 markupDelimiterCharacters =
-    [ '*'  -- opening/closing character for strong
-    , '_'  -- opening/closing character for emphasis
-    , '+'  -- continuation marker, part of hardbreaks
-    ]
+  [ '*'  -- opening/closing character for strong
+  , '_'  -- opening/closing character for emphasis
+  , '+'  -- continuation marker, part of hardbreaks
+  ]
 
 disallowedStrChars :: String
 disallowedStrChars = (specialCharacters ++ markupDelimiterCharacters)

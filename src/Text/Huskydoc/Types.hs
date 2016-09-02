@@ -26,33 +26,34 @@ Portability :  portable
 Huskydoc element types
 -}
 module Text.Huskydoc.Types
-    ( Attr (..)
-    , Attributes (..)
-    , Block (..)
-    , BlockElement
-    , Blocks (..)
-    , Inline (..)
-    , InlineElement
-    , Inlines (..)
-    , RichElement (..)
-    , nullAttributes
-    , plainElement
-    , richElement
-    , simpleNamedAttr
-    , toAttributes
-    ) where
+  ( Attr (..)
+  , Attributes (..)
+  , Block (..)
+  , BlockElement
+  , Blocks (..)
+  , Inline (..)
+  , InlineElement
+  , Inlines (..)
+  , RichElement (..)
+  , nullAttributes
+  , plainElement
+  , richElement
+  , simpleNamedAttr
+  , toAttributes
+  ) where
 
 import Data.Sequence
 import Data.Text
 
 -- | Element attributes
 newtype Attributes = Attributes { fromAttributes :: [Attr] }
-    deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord)
 
-data Attr = NamedAttr Text Text
-          | PositionalAttr Text
-          | OptionAttr Text
-    deriving (Show, Eq, Ord)
+data Attr =
+    NamedAttr Text Text
+  | PositionalAttr Text
+  | OptionAttr Text
+  deriving (Show, Eq, Ord)
 
 toAttributes :: [Attr] -> Attributes
 toAttributes = Attributes
@@ -61,9 +62,9 @@ nullAttributes :: Attributes
 nullAttributes = toAttributes []
 
 data RichElement a = RichElement
-    { richElementAttributes :: Attributes
-    , richElementContent    :: a
-    } deriving (Eq, Ord, Show)
+  { richElementAttributes :: Attributes
+  , richElementContent    :: a
+  } deriving (Eq, Ord, Show)
 
 plainElement :: a -> RichElement a
 plainElement x = RichElement nullAttributes x
@@ -76,24 +77,25 @@ simpleNamedAttr k v = NamedAttr k v
 
 -- | Inline text types.
 data Inline =
-      Emphasis [InlineElement]
-    | LineBreak
-    | SoftBreak
-    | Space
-    | Str Text
-    | Strong [InlineElement]
-    deriving (Show, Eq, Ord)
+    Emphasis [InlineElement]
+  | LineBreak
+  | SoftBreak
+  | Space
+  | Str Text
+  | Strong [InlineElement]
+  deriving (Show, Eq, Ord)
 
 type InlineElement = RichElement Inline
 
 newtype Inlines = Inlines { fromInlines :: Seq InlineElement }
-    deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord)
 
+-- | Block types
 data Block =
-      Paragraph Inlines
+    Paragraph Inlines
   deriving (Show, Eq, Ord)
 
 type BlockElement = RichElement Block
 
 newtype Blocks = Blocks { fromBlocks :: Seq BlockElement }
-    deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord)

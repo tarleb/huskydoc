@@ -26,25 +26,25 @@ Portability :  portable
 Parsers for block elements
 -}
 module Text.Huskydoc.Blocks
-    ( blockElement
-    -- individual block parsers
-    , paragraph
-    ) where
+  ( blockElement
+  -- individual block parsers
+  , paragraph
+  ) where
 
 import           Text.Huskydoc.Attributes
 import qualified Text.Huskydoc.Builders as B
-import           Text.Huskydoc.Inlines ( inlines )
+import           Text.Huskydoc.Inlines (inlines)
 import           Text.Huskydoc.Parsing
 import           Text.Huskydoc.Types
 
 blockElement :: Parser BlockElement
 blockElement = choice
-    [ paragraph
-    ] <?> "blocks"
+  [ paragraph
+  ] <?> "blocks"
 
 paragraph :: Parser BlockElement
 paragraph = try $ do
-    _ <- skipMany blankline
-    attributes <- optional parseAttributes
-    contents <- inlines
-    return $ contents `B.paragraphWith'` attributes
+  _ <- skipMany blankline
+  attributes <- optional parseAttributes
+  contents <- inlines
+  return $ contents `B.paragraphWith'` attributes

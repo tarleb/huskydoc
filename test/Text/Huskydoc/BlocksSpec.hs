@@ -27,9 +27,9 @@ Portability :  portable
 Tests for block parsers.
 -}
 module Text.Huskydoc.BlocksSpec
-    ( main
-    , spec
-    ) where
+  ( main
+  , spec
+  ) where
 
 import           Text.Huskydoc.Blocks
 import qualified Text.Huskydoc.Builders as B
@@ -45,11 +45,11 @@ main = hspec spec
 -- | Specifications for Attributes parsing functions.
 spec :: Spec
 spec = do
-    describe "paragraph" $ do
-        it "parses a simple paragraph" $ do
-            parseDef paragraph "Single line paragraph" `shouldParse`
-              (B.paragraph $ B.toInlines [B.str "Single", B.space, B.str "line", B.space, B.str "paragraph"])
-        it "should fail on empty input" $
-            parseDef paragraph `shouldFailOn` ""
-        it "should fail on whitespace-only lines" $
-            parseDef paragraph `shouldFailOn` "   \n\n"
+  describe "paragraph" $ do
+    it "parses a simple paragraph" $ do
+      parseDef paragraph "Single line paragraph" `shouldParse`
+        (B.paragraph $ B.toInlines [B.str "Single", B.space, B.str "line", B.space, B.str "paragraph"])
+    it "should fail on empty input" $
+      parseDef paragraph `shouldFailOn` ""
+    it "should fail on whitespace-only lines" $
+      parseDef paragraph `shouldFailOn` "   \n\n"
