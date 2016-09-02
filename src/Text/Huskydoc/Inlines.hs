@@ -26,10 +26,7 @@ Portability :  portable
 Parsers for inline elements
 -}
 module Text.Huskydoc.Inlines
-    ( Inline (..)
-    , InlineElement
-    , Inlines (..)
-    , inlineElement
+    ( inlineElement
     , inlines
     -- Single inline parsers
     , emphasis
@@ -49,11 +46,10 @@ import           Text.Huskydoc.Parsing
 import           Text.Huskydoc.Types
 import           Control.Monad ( guard, void )
 import           Data.Maybe ( fromMaybe )
-import qualified Data.Sequence as Seq
 import           Data.Text
 
 inlines :: Parser Inlines
-inlines = Inlines . Seq.fromList <$> some inlineElement
+inlines = B.toInlines <$> some inlineElement
 
 -- | Parse a single inline element.
 inlineElement :: Parser InlineElement

@@ -28,6 +28,9 @@ Huskydoc element types
 module Text.Huskydoc.Types
     ( Attr (..)
     , Attributes (..)
+    , Block (..)
+    , BlockElement
+    , Blocks (..)
     , Inline (..)
     , InlineElement
     , Inlines (..)
@@ -84,4 +87,13 @@ data Inline =
 type InlineElement = RichElement Inline
 
 newtype Inlines = Inlines { fromInlines :: Seq InlineElement }
+    deriving (Show, Eq, Ord)
+
+data Block =
+      Paragraph Inlines
+  deriving (Show, Eq, Ord)
+
+type BlockElement = RichElement Block
+
+newtype Blocks = Blocks { fromBlocks :: Seq BlockElement }
     deriving (Show, Eq, Ord)

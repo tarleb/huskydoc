@@ -26,18 +26,40 @@ Portability :  portable
 Builders for Huskydoc elements
 -}
 module Text.Huskydoc.Builders
-    ( emphasis
+    ( toInlines
+    -- inline elements
+    , emphasis
     , emphasisWith
     , hardBreak
     , softBreak
+    , space
     , str
     , strong
     , strongWith
+    -- blocks
+    , paragraph
+    , paragraphWith
+    , paragraphWith'
     ) where
 
-import Data.Text (Text)
-import Text.Huskydoc.Types
- 
+import           Data.Maybe (fromMaybe)
+import qualified Data.Sequence as Seq
+import           Data.Text (Text)
+import           Text.Huskydoc.Types
+
+--
+-- wrappers
+--
+
+-- | Turn a list of inline elements to inlines.
+toInlines :: [InlineElement] -> Inlines
+toInlines = Inlines . Seq.fromList
+
+
+--
+-- Inline elements
+--
+
 -- | Create a simple element for emphasized text.
 emphasis :: [InlineElement] -> InlineElement
 emphasis = plainElement . Emphasis
@@ -54,6 +76,10 @@ hardBreak = plainElement LineBreak
 softBreak :: InlineElement
 softBreak = plainElement SoftBreak
 
+-- | Create a space element
+space :: InlineElement
+space = plainElement Space
+
 -- | Create a simple string element from text.
 str :: Text -> InlineElement
 str = plainElement . Str
@@ -65,3 +91,16 @@ strong = plainElement . Strong
 -- | Create an element for strong text with attributes.
 strongWith :: Attributes -> [InlineElement] -> InlineElement
 strongWith a es = richElement a (Strong es)
+
+
+--
+-- Block elements
+--
+paragraph :: Inlines -> BlockElement
+paragraph = plainElement . Paragraph
+
+paragraphWith :: Inlines -> Attributes -> BlockElement
+paragraphWith inlns a = richElement a (Paragraph inlns)
+
+paragraphWith' :: Inlines -> Maybe Attributes -> BlockElement
+paragraphWith' inlns a = inlns `paragraphWith` fromMaybe nullAttributes a

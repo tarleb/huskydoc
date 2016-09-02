@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Text.Huskydoc
                      , Text.Huskydoc.Attributes
+                     , Text.Huskydoc.Blocks
                      , Text.Huskydoc.Builders
                      , Text.Huskydoc.Inlines
                      , Text.Huskydoc.Parsing
