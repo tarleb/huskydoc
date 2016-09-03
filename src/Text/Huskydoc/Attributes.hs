@@ -51,11 +51,11 @@ parseAttributes =
 namedAttr :: Parser Attr
 namedAttr = try $ do
   name <- pack <$> alphaNumChar `manyTill` (skipSpaces *> char '=')
-  value <- pack <$> between doubleQuote doubleQuote (some (noneOf "\"]"))
+  value <- pack <$> between doubleQuote doubleQuote (some (noneOf ("\"]"::String)))
   return $ simpleNamedAttr name value
 
 positionalAttr :: Parser Attr
-positionalAttr = PositionalAttr . strip . pack <$> try (some (noneOf "],"))
+positionalAttr = PositionalAttr . strip . pack <$> try (some (noneOf ("],"::String)))
 
 comma :: Parser Char
 comma = char ','

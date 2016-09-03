@@ -14,6 +14,7 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
 
+{-# LANGUAGE CPP #-}
 {-|
 Module      :  Text.Huskydoc.Parsing
 Copyright   :  © 2016 Albert Krewinkel
@@ -49,8 +50,11 @@ import           Data.Default ( Default(..) )
 import           Data.Text
 import           Text.Megaparsec hiding ( spaceChar )
 
+#if MIN_VERSION_megaparsec(5,0,0)
+type Parser = ParsecT Dec Text (TransState.State ParserState)
+#else
 type Parser = ParsecT Text (TransState.State ParserState)
--- type Parser = TransState.StateT ParserState (ParsecT Text (Either ParseError))
+#endif
 
 -- | Parser state
 data ParserState = ParserState
@@ -68,7 +72,12 @@ instance Default ParserState where
 
 -- | Helper function to test parsers.  This sets the source name to the empty
 --   string and uses the default parser state.
+--  FIXME: Changing type signatures are a terrible idea
+#if MIN_VERSION_megaparsec(5,0,0)
+parseDef :: Parser a -> Text -> Either (ParseError (Token Text) Dec) a
+#else
 parseDef :: Parser a -> Text -> Either ParseError a
+#endif
 parseDef p txt = flip TransState.evalState def $  runParserT p "" txt
 
 modifyLocalState :: (ParserState -> ParserState) -> Parser ()

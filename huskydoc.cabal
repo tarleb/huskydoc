@@ -24,9 +24,9 @@ library
                      , Text.Huskydoc.Parsing
                      , Text.Huskydoc.Types
   build-depends:       base             >= 4.7 && < 5
-                     , containers       >= 0.1 && < 0.6
+                     , containers       >= 0.5 && < 0.6
                      , data-default     >= 0.4 && < 0.8
-                     , megaparsec       >= 4.4 && < 5.1
+                     , megaparsec       >= 4.4 && < 6
                      , text             >= 1.2 && < 1.3
                      , transformers     >= 0.4 && < 0.6
   default-language:    Haskell2010
@@ -45,6 +45,8 @@ test-suite huskydoc-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       Text.Huskydoc.AttributesSpec
+                     , Text.Huskydoc.BlocksSpec
+                     , Text.Huskydoc.DocumentSpec
                      , Text.Huskydoc.InlinesSpec
                      , Text.Huskydoc.ParsingSpec
   build-depends:       base
@@ -52,7 +54,7 @@ test-suite huskydoc-test
                      , hspec            >= 2.2 && < 2.3
                      , hspec-discover   >= 2.2 && < 2.3
                      , hspec-megaparsec >= 0.1 && < 0.3
-                     , megaparsec       >= 4.4 && < 5
+                     , megaparsec       >= 4.4 && < 6
                      , text             >= 1.2 && < 1.3
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
