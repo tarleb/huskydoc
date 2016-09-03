@@ -27,13 +27,18 @@ Parsers for AsciiDoc documents
 -}
 module Text.Huskydoc.Document
   ( document
+  , readAsciidoc
   ) where
 
+import           Data.Text
 import qualified Text.Huskydoc.Builders as B
 import           Text.Huskydoc.Blocks (blocks)
-import           Text.Huskydoc.Parsing ((<?>), Parser)
+import           Text.Huskydoc.Parsing ((<?>), Parser, HuskydocError, parseDef)
 import           Text.Huskydoc.Types (Document)
 
 -- | Parse a complete AsciiDoc document
 document :: Parser Document
 document = B.document <$> pure B.emptyMeta <*> blocks <?> "document"
+
+readAsciidoc :: Text -> Either HuskydocError Document
+readAsciidoc input = parseDef document input

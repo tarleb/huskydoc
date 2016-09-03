@@ -28,6 +28,7 @@ Tests for the Parsing module.
 -}
 module Text.Huskydoc.Parsing
   ( ParserState (..)
+  , HuskydocError
   , blankline
   , isAfterString
   , isAfterDelimitedElement
@@ -52,8 +53,10 @@ import           Text.Megaparsec hiding ( spaceChar )
 
 #if MIN_VERSION_megaparsec(5,0,0)
 type Parser = ParsecT Dec Text (TransState.State ParserState)
+type HuskydocError = ParseError (Token Text) Dec
 #else
 type Parser = ParsecT Text (TransState.State ParserState)
+type HuskydocError = ParseError
 #endif
 
 -- | Parser state
@@ -73,11 +76,7 @@ instance Default ParserState where
 -- | Helper function to test parsers.  This sets the source name to the empty
 --   string and uses the default parser state.
 --  FIXME: Changing type signatures are a terrible idea
-#if MIN_VERSION_megaparsec(5,0,0)
-parseDef :: Parser a -> Text -> Either (ParseError (Token Text) Dec) a
-#else
-parseDef :: Parser a -> Text -> Either ParseError a
-#endif
+parseDef :: Parser a -> Text -> Either HuskydocError a
 parseDef p txt = flip TransState.evalState def $  runParserT p "" txt
 
 modifyLocalState :: (ParserState -> ParserState) -> Parser ()
