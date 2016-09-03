@@ -15,7 +15,7 @@ THIS SOFTWARE.
 -}
 
 {-|
-Module      :  Text.Huskydoc.Blocks
+Module      :  Text.Huskydoc.Document
 Copyright   :  © 2016 Albert Krewinkel
 License     :  ISC
 
@@ -23,32 +23,17 @@ Maintainer  :  Albert Krewinkel <tarleb@zeitkraut.de>
 Stability   :  experimental
 Portability :  portable
 
-Parsers for block elements
+Parsers for AsciiDoc documents
 -}
-module Text.Huskydoc.Blocks
-  ( blockElement
-  , blocks
-  -- individual block parsers
-  , paragraph
+module Text.Huskydoc.Document
+  ( document
   ) where
 
-import           Text.Huskydoc.Attributes
 import qualified Text.Huskydoc.Builders as B
-import           Text.Huskydoc.Inlines (inlines)
-import           Text.Huskydoc.Parsing
-import           Text.Huskydoc.Types
+import           Text.Huskydoc.Blocks (blocks)
+import           Text.Huskydoc.Parsing ((<?>), Parser)
+import           Text.Huskydoc.Types (Document)
 
-blocks :: Parser Blocks
-blocks = B.toBlocks <$> some blockElement
-
-blockElement :: Parser BlockElement
-blockElement = choice
-  [ paragraph
-  ] <?> "blocks"
-
-paragraph :: Parser BlockElement
-paragraph = try $ do
-  _ <- skipMany blankline
-  attributes <- optional parseAttributes
-  contents <- inlines
-  return $ contents `B.paragraphWith'` attributes
+-- | Parse a complete AsciiDoc document
+document :: Parser Document
+document = B.document <$> pure B.emptyMeta <*> blocks <?> "document"

@@ -14,8 +14,9 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
 {-|
-Module      :  Text.Huskydoc.Blocks
+Module      :  Text.Huskydoc.DocumentSpec
 Copyright   :  © 2016 Albert Krewinkel
 License     :  ISC
 
@@ -23,32 +24,30 @@ Maintainer  :  Albert Krewinkel <tarleb@zeitkraut.de>
 Stability   :  experimental
 Portability :  portable
 
-Parsers for block elements
+Tests for the AsciiDoc document parser.
 -}
-module Text.Huskydoc.Blocks
-  ( blockElement
-  , blocks
-  -- individual block parsers
-  , paragraph
+module Text.Huskydoc.DocumentSpec
+  ( main
+  , spec
   ) where
 
-import           Text.Huskydoc.Attributes
+import           Text.Huskydoc.Document
 import qualified Text.Huskydoc.Builders as B
-import           Text.Huskydoc.Inlines (inlines)
-import           Text.Huskydoc.Parsing
-import           Text.Huskydoc.Types
+import           Text.Huskydoc.Parsing ( parseDef )
 
-blocks :: Parser Blocks
-blocks = B.toBlocks <$> some blockElement
+import           Test.Hspec
+import           Test.Hspec.Megaparsec
 
-blockElement :: Parser BlockElement
-blockElement = choice
-  [ paragraph
-  ] <?> "blocks"
+-- | Run this spec.
+main :: IO ()
+main = hspec spec
 
-paragraph :: Parser BlockElement
-paragraph = try $ do
-  _ <- skipMany blankline
-  attributes <- optional parseAttributes
-  contents <- inlines
-  return $ contents `B.paragraphWith'` attributes
+-- | Specifications for Attributes parsing functions.
+spec :: Spec
+spec = do
+  describe "document" $ do
+    it "parses a document" $ do
+      parseDef document "Lorem ipsum" `shouldParse`
+        (B.document B.emptyMeta
+         (B.toBlocks . (:[]) . B.paragraph $
+          B.toInlines [B.str "Lorem", B.space, B.str "ipsum"]))

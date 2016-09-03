@@ -14,6 +14,7 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
 
+{-# LANGUAGE RecordWildCards #-}
 {-|
 Module      :  Text.Huskydoc.Types
 Copyright   :  © 2016 Albert Krewinkel
@@ -27,6 +28,11 @@ Builders for Huskydoc elements
 -}
 module Text.Huskydoc.Builders
   ( toInlines
+  , toBlocks
+  -- document
+  , document
+  , metaData
+  , emptyMeta
   -- inline elements
   , emphasis
   , emphasisWith
@@ -48,12 +54,37 @@ import           Data.Text (Text)
 import           Text.Huskydoc.Types
 
 --
+-- Document
+--
+
+-- | A complete document with contents and metadata
+document :: MetaData -> Blocks -> Document
+document = Document
+
+-- | Empty metadata
+emptyMeta :: MetaData
+emptyMeta = MetaData emptyInlines
+
+-- | Create a new metadata element
+metaData :: Inlines -> MetaData
+metaData metaDataTitle = MetaData {..}
+
+
+--
 -- wrappers
 --
 
 -- | Turn a list of inline elements to inlines.
 toInlines :: [InlineElement] -> Inlines
 toInlines = Inlines . Seq.fromList
+
+-- | Empty inlines
+emptyInlines :: Inlines
+emptyInlines = Inlines Seq.empty
+
+-- | Convert a list of block elements into @Blocks@
+toBlocks :: [BlockElement] -> Blocks
+toBlocks = Blocks . Seq.fromList
 
 
 --

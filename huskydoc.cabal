@@ -19,6 +19,7 @@ library
                      , Text.Huskydoc.Attributes
                      , Text.Huskydoc.Blocks
                      , Text.Huskydoc.Builders
+                     , Text.Huskydoc.Document
                      , Text.Huskydoc.Inlines
                      , Text.Huskydoc.Parsing
                      , Text.Huskydoc.Types

@@ -31,9 +31,11 @@ module Text.Huskydoc.Types
   , Block (..)
   , BlockElement
   , Blocks (..)
+  , Document (..)
   , Inline (..)
   , InlineElement
   , Inlines (..)
+  , MetaData (..)
   , RichElement (..)
   , nullAttributes
   , plainElement
@@ -44,6 +46,14 @@ module Text.Huskydoc.Types
 
 import Data.Sequence
 import Data.Text
+
+-- | The full document
+data Document = Document MetaData Blocks deriving (Show, Eq)
+
+-- | Meta data of a document.
+data MetaData = MetaData
+    { metaDataTitle :: Inlines
+    } deriving (Show, Eq)
 
 -- | Element attributes
 newtype Attributes = Attributes { fromAttributes :: [Attr] }
