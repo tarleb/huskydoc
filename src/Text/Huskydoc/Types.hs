@@ -42,8 +42,11 @@ module Text.Huskydoc.Types
   , richElement
   , simpleNamedAttr
   , toAttributes
+  , toBlocksList
+  , toInlinesList
   ) where
 
+import Data.Foldable (toList)
 import Data.Sequence
 import Data.Text
 
@@ -100,6 +103,9 @@ type InlineElement = RichElement Inline
 newtype Inlines = Inlines { fromInlines :: Seq InlineElement }
   deriving (Show, Eq, Ord)
 
+toInlinesList :: Inlines -> [InlineElement]
+toInlinesList = toList . fromInlines
+
 -- | Block types
 data Block =
     Paragraph Inlines
@@ -109,3 +115,6 @@ type BlockElement = RichElement Block
 
 newtype Blocks = Blocks { fromBlocks :: Seq BlockElement }
   deriving (Show, Eq, Ord)
+
+toBlocksList :: Blocks -> [BlockElement]
+toBlocksList = toList . fromBlocks

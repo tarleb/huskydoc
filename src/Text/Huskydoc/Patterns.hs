@@ -13,10 +13,9 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
-
-{-# LANGUAGE OverloadedStrings #-}
-{-|
-Module      :  Text.Huskydoc
+{-# LANGUAGE PatternSynonyms #-}
+{- |
+Module      :  Text.Huskydoc.Patterns
 Copyright   :  © 2016 Albert Krewinkel
 License     :  ISC
 
@@ -24,18 +23,29 @@ Maintainer  :  Albert Krewinkel <tarleb@zeitkraut.de>
 Stability   :  experimental
 Portability :  portable
 
-Asciidoc parser.
+Huskydoc element patterns
 -}
-module Text.Huskydoc
-    ( parseAsciidoc
-    ) where
+module Text.Huskydoc.Patterns
+  ( pattern RichParagraph
+  -- Inlines
+  , pattern RichEmphasis
+  , pattern RichHardBreak
+  , pattern RichSoftBreak
+  , pattern RichSpace
+  , pattern RichStr
+  , pattern RichStrong
+  ) where
 
-import Data.Text
-import Text.Huskydoc.Document (readAsciidoc)
-import Text.Huskydoc.Pandoc (convertDocument)
+import           Text.Huskydoc.Types
 
-parseAsciidoc :: Text -> IO Text
-parseAsciidoc t =
-  return $ case (readAsciidoc t) of
-             Left _ -> "An error occured."
-             Right x -> pack $ show (convertDocument x)
+pattern RichParagraph attr blks = RichElement attr (Paragraph blks)
+
+--
+-- Inlines
+--
+pattern RichEmphasis attr inlns  <- RichElement attr (Emphasis inlns)
+pattern RichHardBreak <- RichElement _ LineBreak
+pattern RichSoftBreak <- RichElement _ SoftBreak
+pattern RichSpace     <- RichElement _ Space
+pattern RichStr attr txt = RichElement attr (Str txt)
+pattern RichStrong attr inlns    <- RichElement attr (Strong inlns)
