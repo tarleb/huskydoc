@@ -53,3 +53,23 @@ spec = do
       parseDef paragraph `shouldFailOn` ""
     it "should fail on whitespace-only lines" $
       parseDef paragraph `shouldFailOn` "   \n\n"
+
+  describe "sectionTitle" $ do
+    it "parses a section title" $ do
+      parseDef sectionTitle "== Level1" `shouldParse`
+        (B.sectionTitle 1 (B.toInlines [B.str "Level1"]))
+    it "should only consume inline text in the current line" $ do
+      parseDef sectionTitle "== Level1\nNext line" `shouldParse`
+        (B.sectionTitle 1 (B.toInlines [B.str "Level1"]))
+    it "should parse underlined titles" $ do
+      parseDef sectionTitle "Level0\n======\n" `shouldParse`
+        (B.sectionTitle 0 (B.toInlines [B.str "Level0"]))
+      parseDef sectionTitle "Level1\n------\n" `shouldParse`
+        (B.sectionTitle 1 (B.toInlines [B.str "Level1"]))
+      parseDef sectionTitle "Level2\n~~~~~~\n" `shouldParse`
+        (B.sectionTitle 2 (B.toInlines [B.str "Level2"]))
+      parseDef sectionTitle "Level3\n^^^^^^\n" `shouldParse`
+        (B.sectionTitle 3 (B.toInlines [B.str "Level3"]))
+    it "should fail if the underline is far too short or too long" $ do
+      parseDef sectionTitle `shouldFailOn `"Level0\n====\n"
+      parseDef sectionTitle `shouldFailOn `"Level0\n========\n"

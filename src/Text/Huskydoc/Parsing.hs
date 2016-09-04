@@ -39,6 +39,7 @@ module Text.Huskydoc.Parsing
   , skipSpaces
   , someSpaces
   , spaceChar
+  , withColumnCount
   -- Re-export Megaparsec types
   , Parser
   , module Text.Megaparsec
@@ -123,3 +124,18 @@ someSpaces = skipSome spaceChar
 -- | Skips zero or more spaces or tabs, then reads a newline.
 blankline :: Parser ()
 blankline = try (skipSpaces *> void eol)
+
+-- | Returns result of and change in columns caused by @parser@.
+withColumnCount :: Parser a -> Parser (Int, a)
+withColumnCount p = do
+  startPos <- colPos
+  res <- p
+  endPos <- colPos
+  return (fromIntegral (endPos - startPos), res)
+
+colPos :: Parser Int
+#if MIN_VERSION_megaparsec(5,0,0)
+colPos = fromIntegral . unPos . sourceColumn <$> getPosition
+#else
+colPos = sourceColumn <$> getPosition
+#endif

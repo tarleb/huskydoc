@@ -43,6 +43,9 @@ module Text.Huskydoc.Builders
   , strong
   , strongWith
   -- blocks
+  , sectionTitle
+  , sectionTitleWith
+  , sectionTitleWith'
   , paragraph
   , paragraphWith
   , paragraphWith'
@@ -135,3 +138,13 @@ paragraphWith inlns a = richElement a (Paragraph inlns)
 
 paragraphWith' :: Inlines -> Maybe Attributes -> BlockElement
 paragraphWith' inlns a = inlns `paragraphWith` fromMaybe nullAttributes a
+
+sectionTitle :: Int -> Inlines -> BlockElement
+sectionTitle lvl = plainElement . SectionTitle lvl
+
+sectionTitleWith :: Int -> Inlines -> Attributes -> BlockElement
+sectionTitleWith lvl inlns a = richElement a (SectionTitle lvl inlns)
+
+sectionTitleWith' :: Int -> Inlines -> Maybe Attributes -> BlockElement
+sectionTitleWith' lvl inlns a =
+  sectionTitleWith lvl inlns $ fromMaybe nullAttributes a

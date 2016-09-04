@@ -29,12 +29,16 @@ module Text.Huskydoc.Blocks
   ( blockElement
   , blocks
   -- individual block parsers
+  , sectionTitle
   , paragraph
   ) where
 
+import           Control.Monad ( guard, mzero, void )
+import           Data.List ( findIndex )
 import           Text.Huskydoc.Attributes
 import qualified Text.Huskydoc.Builders as B
-import           Text.Huskydoc.Inlines (inlines)
+import           Text.Huskydoc.Inlines ( inlines, inlinesExcluding
+                                       , InlineParser(..))
 import           Text.Huskydoc.Parsing
 import           Text.Huskydoc.Types
 
@@ -43,9 +47,58 @@ blocks = B.toBlocks <$> some blockElement
 
 blockElement :: Parser BlockElement
 blockElement = choice
-  [ paragraph
+  [ sectionTitle
+  , paragraph
   ] <?> "blocks"
 
+-- | Parse a section title
+sectionTitle :: Parser BlockElement
+sectionTitle = try $
+       prefixedSectionTitle '='
+   <|> prefixedSectionTitle '#'
+   <|> underlinedSectionTitle
+
+-- | Parse a section title defined using prefix characters
+prefixedSectionTitle :: Char -> Parser BlockElement
+prefixedSectionTitle c = try $ do
+  level <- (\n -> n - 1) . length <$> some (char c)
+  someSpaces
+  guard (level <= 5)
+  inlns <- inlinesExcluding [SoftBreakParser, HardBreakParser]
+  return . plainElement $ SectionTitle level inlns
+
+-- | Parse an underlined section title
+underlinedSectionTitle :: Parser BlockElement
+underlinedSectionTitle = try $ do
+  let titleLine = inlinesExcluding [SoftBreakParser, HardBreakParser]
+  (strlen, inlns) <- withColumnCount titleLine <* eol
+  lineChar <- titleUnderline strlen
+  level <- levelFromLineChar lineChar
+  return . plainElement $ SectionTitle level inlns
+
+-- | Parse a title underline of length @n@ ± 1
+titleUnderline :: Int -> Parser Char
+titleUnderline n = try $ do
+  let lineChar = oneOf titleUnderlineChars
+  firstChar <- lineChar
+  count (n-2) lineChar
+  optional lineChar
+  optional lineChar
+  skipSpaces *> void eol
+  return firstChar
+
+levelFromLineChar :: Char -> Parser Int
+levelFromLineChar c =
+  case findIndex (== c) titleUnderlineChars of
+    (Just n) -> return n
+    Nothing  -> mzero
+
+-- | Characters allowed as underlines for titles, given in descending importance
+-- of the underlined header.
+titleUnderlineChars :: String
+titleUnderlineChars = "=-~^"
+
+-- | A simple paragraph
 paragraph :: Parser BlockElement
 paragraph = try $ do
   _ <- skipMany blankline

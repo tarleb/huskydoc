@@ -27,6 +27,7 @@ Huskydoc element patterns
 -}
 module Text.Huskydoc.Patterns
   ( pattern RichParagraph
+  , pattern RichSectionTitle
   -- Inlines
   , pattern RichEmphasis
   , pattern RichHardBreak
@@ -39,6 +40,7 @@ module Text.Huskydoc.Patterns
 import           Text.Huskydoc.Types
 
 pattern RichParagraph attr blks = RichElement attr (Paragraph blks)
+pattern RichSectionTitle attr lvl blks = RichElement attr (SectionTitle lvl blks)
 
 --
 -- Inlines

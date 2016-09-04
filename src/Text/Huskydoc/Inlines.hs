@@ -26,8 +26,11 @@ Portability :  portable
 Parsers for inline elements
 -}
 module Text.Huskydoc.Inlines
-  ( inlineElement
+  ( InlineParser (..)
+  , inlineParsers
+  , inlineElement
   , inlines
+  , inlinesExcluding
   -- Single inline parsers
   , emphasis
   , hardbreak
@@ -46,23 +49,44 @@ import           Text.Huskydoc.Parsing
 import           Text.Huskydoc.Types
 import           Control.Monad ( guard, void )
 import           Data.Maybe ( fromMaybe )
-import           Data.Text
+import           Data.Text (pack)
 
 inlines :: Parser Inlines
 inlines = B.toInlines <$> some inlineElement
 
+inlinesExcluding :: [InlineParser] -> Parser Inlines
+inlinesExcluding excl = B.toInlines <$> some (inlineElementExcluding excl)
+
+data InlineParser =
+    EmphasisParser
+  | HardBreakParser
+  | SoftBreakParser
+  | StrParser
+  | StrongParser
+  | SymbolParser
+  | WhitespaceParser
+  deriving (Eq, Ord, Show)
+
+-- | Inline parser methods, marked by @InlineParser@ type. The order of the
+-- parsers is the order in which they should be tried.
+inlineParsers :: [(InlineParser, Parser InlineElement)]
+inlineParsers =
+  [ (HardBreakParser, hardbreak)
+  , (WhitespaceParser, whitespace)
+  , (SoftBreakParser, softbreak)
+  , (StrongParser, strong)
+  , (EmphasisParser, emphasis)
+  , (StrParser, str)
+  , (SymbolParser, symbol)
+  ]
+
 -- | Parse a single inline element.
 inlineElement :: Parser InlineElement
-inlineElement =
-  choice
-  [ hardbreak
-  , whitespace
-  , softbreak
-  , strong
-  , emphasis
-  , str
-  , symbol
-  ] <?> "inline element"
+inlineElement = choice (map snd inlineParsers) <?> "inline element"
+
+inlineElementExcluding :: [InlineParser] -> Parser InlineElement
+inlineElementExcluding ps =
+  choice . map snd . filter ((`notElem` ps) . fst) $ inlineParsers
 
 -- | Parse one or more whitespace characters (i.e. tabs or spaces).
 whitespace :: Parser InlineElement

@@ -109,6 +109,7 @@ toInlinesList = toList . fromInlines
 -- | Block types
 data Block =
     Paragraph Inlines
+  | SectionTitle Int Inlines
   deriving (Show, Eq, Ord)
 
 type BlockElement = RichElement Block
