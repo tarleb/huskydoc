@@ -79,7 +79,7 @@ spec = do
 
   describe "strong parser" $ do
     it "parses text between asterisks as strong" $
-      parseDef strong "*strong*" `shouldParse` (B.strong [B.str "strong"])
+      parseDef strong "*strong*" `shouldParse` (B.strong $ B.toInlines [B.str "strong"])
     it "fails if opening asterisk is succeded by space" $
       parseDef strong `shouldFailOn` "* not strong*"
     it "fails if closing asterisk is preceded by space" $
@@ -93,13 +93,14 @@ spec = do
       parseDef (strong <|> symbol *> symbol *> str) "**notStrong"
         `shouldParse` (B.str "notStrong")
     it "parses text delimited by double asterisk as strong" $
-      parseDef strong "**strong**" `shouldParse` (B.strong [B.str "strong"])
+      parseDef strong "**strong**" `shouldParse` (B.strong $ B.toInlines [B.str "strong"])
     it "parses double-delimited text even if preceded by string" $
-      parseDef (str *> strong) "str**strong**" `shouldParse` (B.strong [B.str "strong"])
+      parseDef (str *> strong) "str**strong**" `shouldParse`
+        (B.strong $ B.toInlines [B.str "strong"])
 
   describe "emphasis parser" $ do
     it "parses text between underscores as emphasized" $
-      parseDef emphasis "_emph_" `shouldParse` (B.emphasis [B.str "emph"])
+      parseDef emphasis "_emph_" `shouldParse` (B.emphasis $ B.toInlines [B.str "emph"])
     it "treats umlaut characters as alpha-numeric" $
       parseDef (emphasis *> str) `shouldFailOn` "_nope_ä"
 
@@ -109,15 +110,19 @@ spec = do
 
   describe "nested inlines" $ do
     it "allows emphasis to be nested in strong text" $
-      parseDef strong "*__nested__*" `shouldParse` (B.strong [B.emphasis [B.str "nested"]])
+      parseDef strong "*__nested__*" `shouldParse`
+        (B.strong $ B.toInlines [B.emphasis $ B.toInlines [B.str "nested"]])
     it "allows strong to be nested in emphasized text" $
-      parseDef emphasis "_*nested*_" `shouldParse` (B.emphasis [B.strong [B.str "nested"]])
+      parseDef emphasis "_*nested*_" `shouldParse`
+        (B.emphasis $ B.toInlines [B.strong $ B.toInlines [B.str "nested"]])
 
   describe "inlines in succession" $ do
     it "parses emphasized directly succeded by strong text" $
-      parseDef (emphasis *> strong) "_emph_*strong*" `shouldParse` (B.strong [B.str "strong"])
+      parseDef (emphasis *> strong) "_emph_*strong*" `shouldParse`
+        (B.strong $ B.toInlines [B.str "strong"])
     it "parses strong directly succeded by emphasized text" $
-      parseDef (strong *> emphasis) "*strong*_emph_" `shouldParse` (B.emphasis [B.str "emph"])
+      parseDef (strong *> emphasis) "*strong*_emph_" `shouldParse`
+        (B.emphasis $ B.toInlines [B.str "emph"])
 
   describe "inlineElement parser" $ do
     it "doesn't parse blank lines" $ do
