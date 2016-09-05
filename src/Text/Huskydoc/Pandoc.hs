@@ -51,6 +51,7 @@ convertBlocks = foldr ((<>) . convertBlockElement) mempty . fromBlocks
 
 convertBlockElement :: BlockElement -> Pandoc.Blocks
 convertBlockElement = \case
+  (RichHorizontalRule _)  -> Pandoc.horizontalRule
   (RichParagraph _ inlns) -> Pandoc.para (convertInlines inlns)
   (RichSectionTitle _ lvl inlns) -> Pandoc.header lvl (convertInlines inlns)
   _ -> mempty

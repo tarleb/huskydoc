@@ -43,6 +43,8 @@ module Text.Huskydoc.Builders
   , strong
   , strongWith
   -- blocks
+  , horizontalRule
+  , horizontalRuleWith
   , sectionTitle
   , sectionTitleWith
   , sectionTitleWith'
@@ -130,6 +132,15 @@ strongWith a es = richElement a (Strong es)
 --
 -- Block elements
 --
+
+-- Create a horizontal rule element
+horizontalRule :: BlockElement
+horizontalRule = plainElement HorizontalRule
+
+-- Create a horizontal rule element with attributes
+horizontalRuleWith :: Attributes -> BlockElement
+horizontalRuleWith = flip richElement $ HorizontalRule
+
 paragraph :: Inlines -> BlockElement
 paragraph = plainElement . Paragraph
 

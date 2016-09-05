@@ -45,6 +45,15 @@ main = hspec spec
 -- | Specifications for Attributes parsing functions.
 spec :: Spec
 spec = do
+  describe "horizontalRule" $ do
+    it "parses a simple horizontal rule" $ do
+      parseDef horizontalRule "- - -\n" `shouldParse` B.horizontalRule
+    it "fails if the rule is followed by non-whitespace chars" $ do
+      parseDef horizontalRule `shouldFailOn` "- - - -\n"
+      parseDef horizontalRule `shouldFailOn` "- - --\n"
+      parseDef horizontalRule `shouldFailOn` "- - - %\n"
+      parseDef horizontalRule `shouldFailOn` "- - - a\n"
+
   describe "paragraph" $ do
     it "parses a simple paragraph" $ do
       parseDef paragraph "Single line paragraph" `shouldParse`

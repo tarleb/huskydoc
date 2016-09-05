@@ -26,7 +26,9 @@ Portability :  portable
 Huskydoc element patterns
 -}
 module Text.Huskydoc.Patterns
-  ( pattern RichParagraph
+  ( module Text.Huskydoc.Types
+  , pattern RichHorizontalRule
+  , pattern RichParagraph
   , pattern RichSectionTitle
   -- Inlines
   , pattern RichEmphasis
@@ -39,6 +41,7 @@ module Text.Huskydoc.Patterns
 
 import           Text.Huskydoc.Types
 
+pattern RichHorizontalRule attr = RichElement attr HorizontalRule
 pattern RichParagraph attr blks = RichElement attr (Paragraph blks)
 pattern RichSectionTitle attr lvl blks = RichElement attr (SectionTitle lvl blks)
 

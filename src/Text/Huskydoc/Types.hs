@@ -108,7 +108,8 @@ toInlinesList = toList . fromInlines
 
 -- | Block types
 data Block =
-    Paragraph Inlines
+    HorizontalRule
+  | Paragraph Inlines
   | SectionTitle Int Inlines
   deriving (Show, Eq, Ord)
 

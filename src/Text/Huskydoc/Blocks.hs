@@ -29,8 +29,9 @@ module Text.Huskydoc.Blocks
   ( blockElement
   , blocks
   -- individual block parsers
-  , sectionTitle
+  , horizontalRule
   , paragraph
+  , sectionTitle
   ) where
 
 import           Control.Monad ( guard, mzero, void )
@@ -47,9 +48,16 @@ blocks = B.toBlocks <$> some blockElement
 
 blockElement :: Parser BlockElement
 blockElement = choice
-  [ sectionTitle
+  [ horizontalRule
+  , sectionTitle
   , paragraph
   ] <?> "blocks"
+
+-- | Parse an horizontal rule
+horizontalRule :: Parser BlockElement
+horizontalRule = B.horizontalRule <$ try (choice ruleParsers <* blankline)
+  where ruleParsers = [ string "---" , string "- - -"
+                      , string "***" , string "* * *"]
 
 -- | Parse a section title
 sectionTitle :: Parser BlockElement
@@ -61,6 +69,7 @@ sectionTitle = try $
 -- | Parse a section title defined using prefix characters
 prefixedSectionTitle :: Char -> Parser BlockElement
 prefixedSectionTitle c = try $ do
+  many blankline
   level <- (\n -> n - 1) . length <$> some (char c)
   someSpaces
   guard (level <= 5)
@@ -70,6 +79,7 @@ prefixedSectionTitle c = try $ do
 -- | Parse an underlined section title
 underlinedSectionTitle :: Parser BlockElement
 underlinedSectionTitle = try $ do
+  many blankline
   let titleLine = inlinesExcluding [SoftBreakParser, HardBreakParser]
   (strlen, inlns) <- withColumnCount titleLine <* eol
   lineChar <- titleUnderline strlen
