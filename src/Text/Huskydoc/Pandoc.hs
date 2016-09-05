@@ -66,6 +66,6 @@ convertInlineElement = \case
   (RichStr _ txt)           -> Pandoc.str . unpack $ txt
   (RichHardBreak)           -> Pandoc.linebreak
   (RichSoftBreak)           -> Pandoc.softbreak
-  (RichEmphasis _ inlns)    -> Pandoc.emph   . convertInlines . B.toInlines $ inlns
-  (RichStrong   _ inlns)    -> Pandoc.strong . convertInlines . B.toInlines $ inlns
+  (RichEmphasis _ inlns)    -> Pandoc.emph   . convertInlines $ inlns
+  (RichStrong   _ inlns)    -> Pandoc.strong . convertInlines $ inlns
   _                         -> mempty

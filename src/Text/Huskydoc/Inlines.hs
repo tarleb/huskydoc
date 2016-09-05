@@ -114,7 +114,7 @@ strong = quotedText B.strongWith '*'
 emphasis :: Parser InlineElement
 emphasis = quotedText B.emphasisWith '_'
 
-quotedText :: (Attributes -> [InlineElement] -> InlineElement)
+quotedText :: (Attributes -> Inlines -> InlineElement)
            -> Char
            -> Parser InlineElement
 quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
@@ -126,8 +126,8 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
       attributes <- optional parseAttributes
       char c'
       notFollowedBy spaceChar
-      element <- someTill inlineElement (try endChar)
-      return $ bldr (fromMaybe nullAttributes attributes) element
+      elements <- someTill inlineElement (try endChar)
+      return $ bldr (fromMaybe nullAttributes attributes) (B.toInlines elements)
       where
         endChar = do
           guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
@@ -138,8 +138,8 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
     doubleDelimitedMarkup c' = try $ do
       attributes <- optional parseAttributes
       string [c',c']
-      element <- someTill inlineElement (try $ string [c',c'])
-      return $ bldr (fromMaybe nullAttributes attributes) element
+      elements <- someTill inlineElement (try $ string [c',c'])
+      return $ bldr (fromMaybe nullAttributes attributes) (B.toInlines elements)
 
 -- | Parse a single special character.
 symbol :: Parser InlineElement

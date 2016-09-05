@@ -90,12 +90,12 @@ simpleNamedAttr k v = NamedAttr k v
 
 -- | Inline text types.
 data Inline =
-    Emphasis [InlineElement]
+    Emphasis Inlines
   | LineBreak
   | SoftBreak
   | Space
   | Str Text
-  | Strong [InlineElement]
+  | Strong Inlines
   deriving (Show, Eq, Ord)
 
 type InlineElement = RichElement Inline

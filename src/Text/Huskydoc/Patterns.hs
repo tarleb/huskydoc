@@ -39,18 +39,20 @@ module Text.Huskydoc.Patterns
   , pattern RichStrong
   ) where
 
-import           Text.Huskydoc.Types
+import qualified Text.Huskydoc.Types as I  -- Internal types
+import           Text.Huskydoc.Types ( RichElement (..), InlineElement
+                                     , BlockElement, Inlines, Blocks )
 
-pattern RichHorizontalRule attr = RichElement attr HorizontalRule
-pattern RichParagraph attr blks = RichElement attr (Paragraph blks)
-pattern RichSectionTitle attr lvl blks = RichElement attr (SectionTitle lvl blks)
+pattern RichHorizontalRule attr = RichElement attr I.HorizontalRule
+pattern RichParagraph attr blks = RichElement attr (I.Paragraph blks)
+pattern RichSectionTitle attr lvl blks = RichElement attr (I.SectionTitle lvl blks)
 
 --
 -- Inlines
 --
-pattern RichEmphasis attr inlns  <- RichElement attr (Emphasis inlns)
-pattern RichHardBreak <- RichElement _ LineBreak
-pattern RichSoftBreak <- RichElement _ SoftBreak
-pattern RichSpace     <- RichElement _ Space
-pattern RichStr attr txt = RichElement attr (Str txt)
-pattern RichStrong attr inlns    <- RichElement attr (Strong inlns)
+pattern RichEmphasis attr inlns  <- RichElement attr (I.Emphasis inlns)
+pattern RichHardBreak <- RichElement _ I.LineBreak
+pattern RichSoftBreak <- RichElement _ I.SoftBreak
+pattern RichSpace     <- RichElement _ I.Space
+pattern RichStr attr txt = RichElement attr (I.Str txt)
+pattern RichStrong attr inlns = RichElement attr (I.Strong inlns)

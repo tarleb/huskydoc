@@ -98,10 +98,10 @@ toBlocks = Blocks . Seq.fromList
 
 -- | Create a simple element for emphasized text.
 emphasis :: Inlines -> InlineElement
-emphasis = plainElement . Emphasis . toInlinesList
+emphasis = plainElement . Emphasis
 
 -- | Create an element for emphasized text with attributes.
-emphasisWith :: Attributes -> [InlineElement] -> InlineElement
+emphasisWith :: Attributes -> Inlines -> InlineElement
 emphasisWith a es = richElement a (Emphasis es)
 
 -- | Create a hard linebreak element.
@@ -122,11 +122,11 @@ str = plainElement . Str
 
 -- | Create a simple element for strong text.
 strong :: Inlines -> InlineElement
-strong = plainElement . Strong . toInlinesList
+strong = plainElement . Strong
 
 -- | Create an element for strong text with attributes.
-strongWith :: Attributes -> [InlineElement] -> InlineElement
-strongWith a es = richElement a (Strong es)
+strongWith :: Attributes -> Inlines -> InlineElement
+strongWith a = richElement a . Strong
 
 
 --
