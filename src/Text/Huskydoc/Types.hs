@@ -92,6 +92,7 @@ simpleNamedAttr k v = NamedAttr k v
 data Inline =
     Emphasis Inlines
   | LineBreak
+  | Link Text Inlines
   | SoftBreak
   | Space
   | Str Text

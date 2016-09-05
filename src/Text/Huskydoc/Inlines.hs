@@ -34,6 +34,7 @@ module Text.Huskydoc.Inlines
   -- Single inline parsers
   , emphasis
   , hardbreak
+  , link
   , softbreak
   , str
   , strong
@@ -41,20 +42,29 @@ module Text.Huskydoc.Inlines
   , whitespace
   -- helpers
   , quotedText
+  , url
   ) where
 
-import           Text.Huskydoc.Attributes
-import           Text.Huskydoc.Parsing
-import           Text.Huskydoc.Patterns
-import           Control.Monad ( guard, void )
-import           Data.Maybe ( fromMaybe )
-import           Data.Text (pack)
+import Control.Monad ( guard, void )
+import Data.Maybe ( fromMaybe )
+import Data.List ( intercalate )
+import Data.Monoid ( (<>) )
+import Data.Text (Text, pack)
+import Text.Huskydoc.Attributes
+import Text.Huskydoc.Parsing
+import Text.Huskydoc.Patterns
 
+-- | Parse one or more inline elements
 inlines :: Parser Inlines
 inlines = toInlines <$> some inlineElement
 
+-- | Parse one or more inlines, excluding some inline element parsers
 inlinesExcluding :: [InlineParser] -> Parser Inlines
 inlinesExcluding excl = toInlines <$> some (inlineElementExcluding excl)
+
+-- | One or more inlines surrounded but @start@ and @end@
+inlinesBetween :: Parser a -> Parser b -> Parser Inlines
+inlinesBetween start end = toInlines <$> (start *> someTill inlineElement end)
 
 data InlineParser =
     EmphasisParser
@@ -138,6 +148,23 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
       elements <- someTill inlineElement (try $ string [c',c'])
       return $ bldr (fromMaybe nullAttributes attributes) (toInlines elements)
 
+-- | Parse a links
+link :: Parser InlineElement
+link = try $ Link <$> url <*> inlinesBetween (char '[') (char ']')
+
+-- | Parse an URL
+url :: Parser Text
+url = try $ do
+  schema <- (<>) <$> choice (map string schemas) <*> string "://"
+  let subdomain = try $ manyTill (alphaNumChar <|> oneOf ("-_"::String)) (char '.')
+  subdomains <- many subdomain
+  tld <- many letterChar
+  path <- many (notFollowedBy (spaceChar <|> char '[') *> anyChar)
+  return . pack $ schema <> intercalate "." (subdomains <> [tld]) <> path
+
+schemas :: [String]
+schemas = ["https", "http", "ftp", "irc", "mailto"]
+
 -- | Parse a single special character.
 symbol :: Parser InlineElement
 symbol = Str . pack . (:[]) <$> oneOf markupDelimiterCharacters
@@ -155,6 +182,8 @@ markupDelimiterCharacters =
   [ '*'  -- opening/closing character for strong
   , '_'  -- opening/closing character for emphasis
   , '+'  -- continuation marker, part of hardbreaks
+  , '['  -- beginning of attributes or link description
+  , ']'  -- end of attributes or link description
   ]
 
 disallowedStrChars :: String

@@ -75,6 +75,8 @@ spec = do
     it "fails on an alphanum character" $ do
       parseDef symbol `shouldFailOn` "a"
       parseDef symbol `shouldFailOn` "1"
+    it "fails on an empty input" $ do
+      parseDef symbol `shouldFailOn` ""
 
   describe "strong parser" $ do
     it "parses text between asterisks as strong" $
@@ -126,3 +128,20 @@ spec = do
   describe "inlineElement parser" $ do
     it "doesn't parse blank lines" $ do
       parseDef inlineElement `shouldFailOn` "\n\n"
+
+  describe "url parser" $ do
+    it "parses a simple url without a path" $ do
+      parseDef url "http://pandoc.org" `shouldParse` "http://pandoc.org"
+    it "parses URLs with paths" $ do
+      parseDef url "http://asciidoctor.org/docs/user-manual/#elements" `shouldParse`
+        "http://asciidoctor.org/docs/user-manual/#elements"
+    it "stops at whitespace or opening square brackets" $ do
+      parseDef (url *> whitespace) `shouldSucceedOn` "http://asciidoctor.org/docs "
+      parseDef (url *> symbol) `shouldSucceedOn` "http://asciidoctor.org/docs["
+
+  describe "link parser" $ do
+    it "parses a simple link" $ do
+      parseDef link "https://ccc.de/[*Chaos* Computer Club]" `shouldParse`
+        Link "https://ccc.de/" (toInlines [ Strong (toInlines [Str "Chaos"])
+                                          , Space, Str "Computer"
+                                          , Space, Str "Club"])
