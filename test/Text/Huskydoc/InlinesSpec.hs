@@ -31,13 +31,12 @@ module Text.Huskydoc.InlinesSpec
   , spec
   ) where
 
-import qualified Text.Huskydoc.Builders as B
-import           Text.Huskydoc.Inlines
-import           Text.Huskydoc.Parsing ( parseDef, (<|>) )
-
 import Data.Text
 import Test.Hspec
 import Test.Hspec.Megaparsec
+import Text.Huskydoc.Inlines
+import Text.Huskydoc.Parsing ( parseDef, (<|>) )
+import Text.Huskydoc.Patterns
 
 -- | Run this spec.
 main :: IO ()
@@ -48,38 +47,38 @@ spec :: Spec
 spec = do
   describe "soft linebreaks parser" $ do
     it "parses crlf" $ do
-      parseDef softbreak "\r\n" `shouldParse` B.softBreak
+      parseDef softbreak "\r\n" `shouldParse` SoftBreak
     it "parses linefeed" $ do
-      parseDef softbreak "\n" `shouldParse` B.softBreak
+      parseDef softbreak "\n" `shouldParse` SoftBreak
     it "allows spaces before linefeed" $ do
-      parseDef softbreak "   \n" `shouldParse` B.softBreak
+      parseDef softbreak "   \n" `shouldParse` SoftBreak
 
   describe "hard linebreaks parser" $ do
     it "parses spaces, continuation char `+`, and crlf" $ do
-      parseDef hardbreak " +\r\n" `shouldParse` B.hardBreak
+      parseDef hardbreak " +\r\n" `shouldParse` HardBreak
     it "parses spaces,  continuation char `+`, and linefeed" $ do
-      parseDef hardbreak "    +\n" `shouldParse` B.hardBreak
+      parseDef hardbreak "    +\n" `shouldParse` HardBreak
 
   describe "string parser" $ do
     it "parses normal string" $ do
-      parseDef str "hello" `shouldParse` (B.str "hello")
+      parseDef str "hello" `shouldParse` (Str "hello")
     it "fails on newline" $ do
       parseDef str `shouldFailOn` "\n"
     it "fails on empty string" $ do
       parseDef str `shouldFailOn` ""
     it "stops before `+` characters" $
-      parseDef str "ab+c" `shouldParse` (B.str "ab")
+      parseDef str "ab+c" `shouldParse` (Str "ab")
 
   describe "symbol parser" $ do
     it "parses a `+` character" $
-      parseDef symbol "+" `shouldParse` (B.str "+")
+      parseDef symbol "+" `shouldParse` (Str "+")
     it "fails on an alphanum character" $ do
       parseDef symbol `shouldFailOn` "a"
       parseDef symbol `shouldFailOn` "1"
 
   describe "strong parser" $ do
     it "parses text between asterisks as strong" $
-      parseDef strong "*strong*" `shouldParse` (B.strong $ B.toInlines [B.str "strong"])
+      parseDef strong "*strong*" `shouldParse` (Strong $ toInlines [Str "strong"])
     it "fails if opening asterisk is succeded by space" $
       parseDef strong `shouldFailOn` "* not strong*"
     it "fails if closing asterisk is preceded by space" $
@@ -89,18 +88,18 @@ spec = do
     it "fails if its follow by a string" $
       parseDef (strong *> str) `shouldFailOn` "*strong*str"
     it "doesn't consume anything if it fails" $ do
-      parseDef (strong <|> symbol) "*notStrong" `shouldParse` (B.str "*")
+      parseDef (strong <|> symbol) "*notStrong" `shouldParse` (Str "*")
       parseDef (strong <|> symbol *> symbol *> str) "**notStrong"
-        `shouldParse` (B.str "notStrong")
+        `shouldParse` (Str "notStrong")
     it "parses text delimited by double asterisk as strong" $
-      parseDef strong "**strong**" `shouldParse` (B.strong $ B.toInlines [B.str "strong"])
+      parseDef strong "**strong**" `shouldParse` (Strong $ toInlines [Str "strong"])
     it "parses double-delimited text even if preceded by string" $
       parseDef (str *> strong) "str**strong**" `shouldParse`
-        (B.strong $ B.toInlines [B.str "strong"])
+        (Strong $ toInlines [Str "strong"])
 
   describe "emphasis parser" $ do
     it "parses text between underscores as emphasized" $
-      parseDef emphasis "_emph_" `shouldParse` (B.emphasis $ B.toInlines [B.str "emph"])
+      parseDef emphasis "_emph_" `shouldParse` (Emphasis $ toInlines [Str "emph"])
     it "treats umlaut characters as alpha-numeric" $
       parseDef (emphasis *> str) `shouldFailOn` "_nope_ä"
 
@@ -111,18 +110,18 @@ spec = do
   describe "nested inlines" $ do
     it "allows emphasis to be nested in strong text" $
       parseDef strong "*__nested__*" `shouldParse`
-        (B.strong $ B.toInlines [B.emphasis $ B.toInlines [B.str "nested"]])
+        (Strong $ toInlines [Emphasis $ toInlines [Str "nested"]])
     it "allows strong to be nested in emphasized text" $
       parseDef emphasis "_*nested*_" `shouldParse`
-        (B.emphasis $ B.toInlines [B.strong $ B.toInlines [B.str "nested"]])
+        (Emphasis $ toInlines [Strong $ toInlines [Str "nested"]])
 
   describe "inlines in succession" $ do
     it "parses emphasized directly succeded by strong text" $
       parseDef (emphasis *> strong) "_emph_*strong*" `shouldParse`
-        (B.strong $ B.toInlines [B.str "strong"])
+        (Strong $ toInlines [Str "strong"])
     it "parses strong directly succeded by emphasized text" $
       parseDef (strong *> emphasis) "*strong*_emph_" `shouldParse`
-        (B.emphasis $ B.toInlines [B.str "emph"])
+        (Emphasis $ toInlines [Str "emph"])
 
   describe "inlineElement parser" $ do
     it "doesn't parse blank lines" $ do

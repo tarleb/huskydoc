@@ -31,12 +31,12 @@ module Text.Huskydoc.DocumentSpec
   , spec
   ) where
 
-import           Text.Huskydoc.Document
-import qualified Text.Huskydoc.Builders as B
-import           Text.Huskydoc.Parsing ( parseDef )
+import Text.Huskydoc.Document
+import Text.Huskydoc.Parsing ( parseDef )
+import Text.Huskydoc.Patterns
 
-import           Test.Hspec
-import           Test.Hspec.Megaparsec
+import Test.Hspec
+import Test.Hspec.Megaparsec
 
 -- | Run this spec.
 main :: IO ()
@@ -48,6 +48,6 @@ spec = do
   describe "document" $ do
     it "parses a document" $ do
       parseDef document "Lorem ipsum" `shouldParse`
-        (B.document B.emptyMeta
-         (B.toBlocks . (:[]) . B.paragraph $
-          B.toInlines [B.str "Lorem", B.space, B.str "ipsum"]))
+        (Document emptyMeta
+         (toBlocks . (:[]) . Paragraph $
+          toInlines [Str "Lorem", Space, Str "ipsum"]))

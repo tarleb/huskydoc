@@ -35,9 +35,7 @@ import           Prelude hiding (foldr)
 import           Data.Foldable (foldr)
 import           Data.Monoid ((<>))
 import           Data.Text (unpack)
-import qualified Text.Huskydoc.Builders as B
 import           Text.Huskydoc.Patterns
-import           Text.Huskydoc.Types
 import qualified Text.Pandoc.Builder as Pandoc
 import           Text.Pandoc.Definition (Pandoc)
 
@@ -51,10 +49,10 @@ convertBlocks = foldr ((<>) . convertBlockElement) mempty . fromBlocks
 
 convertBlockElement :: BlockElement -> Pandoc.Blocks
 convertBlockElement = \case
-  (RichHorizontalRule _)  -> Pandoc.horizontalRule
-  (RichParagraph _ inlns) -> Pandoc.para (convertInlines inlns)
-  (RichSectionTitle _ lvl inlns) -> Pandoc.header lvl (convertInlines inlns)
-  _ -> mempty
+  (HorizontalRule)         -> Pandoc.horizontalRule
+  (Paragraph inlns)        -> Pandoc.para (convertInlines inlns)
+  (SectionTitle lvl inlns) -> Pandoc.header lvl (convertInlines inlns)
+  _                        -> mempty
 
 -- | Convert huskydoc inlines into pandoc inlines
 convertInlines :: Inlines -> Pandoc.Inlines
@@ -62,10 +60,10 @@ convertInlines = foldr ((<>) . convertInlineElement) mempty . fromInlines
 
 convertInlineElement :: InlineElement -> Pandoc.Inlines
 convertInlineElement = \case
-  (RichSpace)               -> Pandoc.space
-  (RichStr _ txt)           -> Pandoc.str . unpack $ txt
-  (RichHardBreak)           -> Pandoc.linebreak
-  (RichSoftBreak)           -> Pandoc.softbreak
-  (RichEmphasis _ inlns)    -> Pandoc.emph   . convertInlines $ inlns
-  (RichStrong   _ inlns)    -> Pandoc.strong . convertInlines $ inlns
-  _                         -> mempty
+  (Str txt)        -> Pandoc.str . unpack $ txt
+  (Space)          -> Pandoc.space
+  (HardBreak)      -> Pandoc.linebreak
+  (SoftBreak)      -> Pandoc.softbreak
+  (Emphasis inlns) -> Pandoc.emph   . convertInlines $ inlns
+  (Strong   inlns) -> Pandoc.strong . convertInlines $ inlns
+  _                -> mempty

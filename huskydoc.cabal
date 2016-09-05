@@ -18,12 +18,11 @@ library
   exposed-modules:     Text.Huskydoc
                      , Text.Huskydoc.Attributes
                      , Text.Huskydoc.Blocks
-                     , Text.Huskydoc.Builders
                      , Text.Huskydoc.Document
                      , Text.Huskydoc.Inlines
                      , Text.Huskydoc.Pandoc
-                     , Text.Huskydoc.Patterns
                      , Text.Huskydoc.Parsing
+                     , Text.Huskydoc.Patterns
                      , Text.Huskydoc.Types
   build-depends:       base             >= 4.7  && < 5
                      , containers       >= 0.5  && < 0.6

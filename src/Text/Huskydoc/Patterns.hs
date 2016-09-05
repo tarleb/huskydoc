@@ -14,7 +14,8 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
 {-# LANGUAGE PatternSynonyms #-}
-{- |
+{-# LANGUAGE RecordWildCards #-}
+{-|
 Module      :  Text.Huskydoc.Patterns
 Copyright   :  © 2016 Albert Krewinkel
 License     :  ISC
@@ -23,36 +24,170 @@ Maintainer  :  Albert Krewinkel <tarleb@zeitkraut.de>
 Stability   :  experimental
 Portability :  portable
 
-Huskydoc element patterns
+Patterns for Huskydoc elements
 -}
 module Text.Huskydoc.Patterns
   ( module Text.Huskydoc.Types
+  , toInlines
+  , toBlocks
+  -- document
+  , metaData
+  , emptyMeta
+  -- Attributes
+  , pattern EmptyAttributes
+  -- Plain blocks
+  , pattern HorizontalRule
+  , pattern Paragraph
+  , pattern SectionTitle
+  -- Rich blocks
   , pattern RichHorizontalRule
   , pattern RichParagraph
   , pattern RichSectionTitle
   -- Inlines
+  , pattern Emphasis
+  , pattern HardBreak
+  , pattern SoftBreak
+  , pattern Space
+  , pattern Str
+  , pattern Strong
+  -- Rich inlines
   , pattern RichEmphasis
   , pattern RichHardBreak
   , pattern RichSoftBreak
   , pattern RichSpace
   , pattern RichStr
   , pattern RichStrong
+  , sectionTitleWith
+  , paragraphWith
   ) where
 
-import qualified Text.Huskydoc.Types as I  -- Internal types
-import           Text.Huskydoc.Types ( RichElement (..), InlineElement
-                                     , BlockElement, Inlines, Blocks )
-
-pattern RichHorizontalRule attr = RichElement attr I.HorizontalRule
-pattern RichParagraph attr blks = RichElement attr (I.Paragraph blks)
-pattern RichSectionTitle attr lvl blks = RichElement attr (I.SectionTitle lvl blks)
+import           Data.Maybe (fromMaybe)
+import qualified Data.Sequence as Seq
+import           Text.Huskydoc.Types ( Attributes (..), RichElement (..)
+                                     , Document (..), MetaData (..)
+                                     , BlockElement, Blocks (..)
+                                     , InlineElement, Inlines (..)
+                                     , plainElement , nullAttributes
+                                     )
+import qualified Text.Huskydoc.Types as Internal
 
 --
--- Inlines
+-- Document
 --
-pattern RichEmphasis attr inlns  <- RichElement attr (I.Emphasis inlns)
-pattern RichHardBreak <- RichElement _ I.LineBreak
-pattern RichSoftBreak <- RichElement _ I.SoftBreak
-pattern RichSpace     <- RichElement _ I.Space
-pattern RichStr attr txt = RichElement attr (I.Str txt)
-pattern RichStrong attr inlns = RichElement attr (I.Strong inlns)
+
+-- | Empty metadata
+emptyMeta :: MetaData
+emptyMeta = MetaData emptyInlines
+
+-- | Create a new metadata element
+metaData :: Inlines -> MetaData
+metaData metaDataTitle = MetaData {..}
+
+
+--
+-- wrappers
+--
+
+-- | Turn a list of inline elements to inlines.
+toInlines :: [InlineElement] -> Inlines
+toInlines = Internal.Inlines . Seq.fromList
+
+-- | Empty inlines
+emptyInlines :: Inlines
+emptyInlines = Internal.Inlines Seq.empty
+
+-- | Convert a list of block elements into @Blocks@
+toBlocks :: [BlockElement] -> Blocks
+toBlocks = Internal.Blocks . Seq.fromList
+
+
+--
+-- Inline elements
+--
+
+-- | Empty attributes
+pattern EmptyAttributes = Attributes []
+
+-- | A simple element of emphasized text.
+-- Emphasis :: Inlines -> InlineElement
+pattern Emphasis inlns <- RichElement _ (Internal.Emphasis inlns)
+  where Emphasis inlns = plainElement . Internal.Emphasis $ inlns
+
+-- | Hard linebreak element
+pattern HardBreak <- RichElement _ Internal.LineBreak
+  where HardBreak = plainElement Internal.LineBreak
+
+-- | Soft linebreak element
+pattern SoftBreak <- RichElement _ Internal.SoftBreak
+  where SoftBreak = plainElement Internal.SoftBreak
+
+-- | Sspace element
+pattern Space <- RichElement _ Internal.Space
+  where Space = plainElement Internal.Space
+
+-- | Simple text element
+pattern Str txt <- RichElement _ (Internal.Str txt)
+  where Str = plainElement . Internal.Str
+
+-- | Plain elements
+pattern Strong inlns <- RichElement _ (Internal.Strong inlns)
+  where Strong = plainElement . Internal.Strong
+
+
+--
+-- Inline elements with attributes ("Rich" elements)
+--
+
+-- | An element for emphasized text with attributes
+-- RichEmphasis :: Inlines -> InlineElement
+pattern RichEmphasis attr inlns = RichElement attr (Internal.Emphasis inlns)
+
+-- | Hard linebreak element with attributes
+pattern RichHardBreak attrs = RichElement attrs Internal.LineBreak
+
+-- | Soft linebreak element with attributes
+pattern RichSoftBreak attrs = RichElement attrs Internal.SoftBreak
+
+-- | Space with attributes
+pattern RichSpace attr = RichElement attr Internal.Space
+
+-- | Text element with attributes
+pattern RichStr attr txt = RichElement attr (Internal.Str txt)
+
+-- | Strong text with attributes
+pattern RichStrong attr inlns = RichElement attr (Internal.Strong inlns)
+
+--
+-- Plain block elements
+--
+-- | Horizontal rule element
+pattern HorizontalRule <- RichElement _ Internal.HorizontalRule
+  where HorizontalRule = plainElement Internal.HorizontalRule
+
+-- | Paragraph element
+pattern Paragraph blks <- RichElement _ (Internal.Paragraph blks)
+  where Paragraph = plainElement . Internal.Paragraph
+
+-- | Section title element
+pattern SectionTitle lvl inlns <- RichElement _ (Internal.SectionTitle lvl inlns)
+  where SectionTitle lvl inlns = plainElement (Internal.SectionTitle lvl inlns)
+
+--
+-- Block elements with attributes ("Rich" block elements)
+--
+
+-- | Horizontal rule element with attributes
+pattern RichHorizontalRule attr = RichElement attr Internal.HorizontalRule
+
+-- | Paragraph element with attributes
+pattern RichParagraph attr blks = RichElement attr (Internal.Paragraph blks)
+
+-- | Section title element with attributes
+pattern RichSectionTitle attr lvl blks = RichElement attr (Internal.SectionTitle lvl blks)
+
+
+paragraphWith :: Inlines -> Maybe Attributes -> BlockElement
+paragraphWith inlns a = fromMaybe nullAttributes a `RichParagraph` inlns
+
+sectionTitleWith :: Int -> Inlines -> Maybe Attributes -> BlockElement
+sectionTitleWith lvl inlns a = (maybe SectionTitle RichSectionTitle a) lvl $ inlns

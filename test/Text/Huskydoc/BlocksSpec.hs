@@ -31,12 +31,12 @@ module Text.Huskydoc.BlocksSpec
   , spec
   ) where
 
-import           Text.Huskydoc.Blocks
-import qualified Text.Huskydoc.Builders as B
-import           Text.Huskydoc.Parsing ( parseDef )
+import Text.Huskydoc.Blocks
+import Text.Huskydoc.Parsing ( parseDef )
+import Text.Huskydoc.Patterns
 
-import           Test.Hspec
-import           Test.Hspec.Megaparsec
+import Test.Hspec
+import Test.Hspec.Megaparsec
 
 -- | Run this spec.
 main :: IO ()
@@ -47,7 +47,7 @@ spec :: Spec
 spec = do
   describe "horizontalRule" $ do
     it "parses a simple horizontal rule" $ do
-      parseDef horizontalRule "- - -\n" `shouldParse` B.horizontalRule
+      parseDef horizontalRule "- - -\n" `shouldParse` HorizontalRule
     it "fails if the rule is followed by non-whitespace chars" $ do
       parseDef horizontalRule `shouldFailOn` "- - - -\n"
       parseDef horizontalRule `shouldFailOn` "- - --\n"
@@ -57,7 +57,7 @@ spec = do
   describe "paragraph" $ do
     it "parses a simple paragraph" $ do
       parseDef paragraph "Single line paragraph" `shouldParse`
-        (B.paragraph $ B.toInlines [B.str "Single", B.space, B.str "line", B.space, B.str "paragraph"])
+        (Paragraph $ toInlines [Str "Single", Space, Str "line", Space, Str "paragraph"])
     it "should fail on empty input" $
       parseDef paragraph `shouldFailOn` ""
     it "should fail on whitespace-only lines" $
@@ -66,19 +66,19 @@ spec = do
   describe "sectionTitle" $ do
     it "parses a section title" $ do
       parseDef sectionTitle "== Level1" `shouldParse`
-        (B.sectionTitle 1 (B.toInlines [B.str "Level1"]))
+        (SectionTitle 1 (toInlines [Str "Level1"]))
     it "should only consume inline text in the current line" $ do
       parseDef sectionTitle "== Level1\nNext line" `shouldParse`
-        (B.sectionTitle 1 (B.toInlines [B.str "Level1"]))
+        (SectionTitle 1 (toInlines [Str "Level1"]))
     it "should parse underlined titles" $ do
       parseDef sectionTitle "Level0\n======\n" `shouldParse`
-        (B.sectionTitle 0 (B.toInlines [B.str "Level0"]))
+        (SectionTitle 0 (toInlines [Str "Level0"]))
       parseDef sectionTitle "Level1\n------\n" `shouldParse`
-        (B.sectionTitle 1 (B.toInlines [B.str "Level1"]))
+        (SectionTitle 1 (toInlines [Str "Level1"]))
       parseDef sectionTitle "Level2\n~~~~~~\n" `shouldParse`
-        (B.sectionTitle 2 (B.toInlines [B.str "Level2"]))
+        (SectionTitle 2 (toInlines [Str "Level2"]))
       parseDef sectionTitle "Level3\n^^^^^^\n" `shouldParse`
-        (B.sectionTitle 3 (B.toInlines [B.str "Level3"]))
+        (SectionTitle 3 (toInlines [Str "Level3"]))
     it "should fail if the underline is far too short or too long" $ do
       parseDef sectionTitle `shouldFailOn `"Level0\n====\n"
       parseDef sectionTitle `shouldFailOn `"Level0\n========\n"

@@ -34,17 +34,16 @@ module Text.Huskydoc.Blocks
   , sectionTitle
   ) where
 
-import           Control.Monad ( guard, mzero, void )
-import           Data.List ( findIndex )
-import           Text.Huskydoc.Attributes
-import qualified Text.Huskydoc.Builders as B
-import           Text.Huskydoc.Inlines ( inlines, inlinesExcluding
-                                       , InlineParser(..))
-import           Text.Huskydoc.Parsing
-import           Text.Huskydoc.Types
+import Control.Monad ( guard, mzero, void )
+import Data.List ( findIndex )
+import Text.Huskydoc.Attributes
+import Text.Huskydoc.Inlines ( inlines, inlinesExcluding
+                             , InlineParser(..))
+import Text.Huskydoc.Parsing
+import Text.Huskydoc.Patterns
 
 blocks :: Parser Blocks
-blocks = B.toBlocks <$> some blockElement
+blocks = toBlocks <$> some blockElement
 
 blockElement :: Parser BlockElement
 blockElement = choice
@@ -55,7 +54,7 @@ blockElement = choice
 
 -- | Parse an horizontal rule
 horizontalRule :: Parser BlockElement
-horizontalRule = B.horizontalRule <$ try (choice ruleParsers <* blankline)
+horizontalRule = HorizontalRule <$ try (choice ruleParsers <* blankline)
   where ruleParsers = [ string "---" , string "- - -"
                       , string "***" , string "* * *"]
 
@@ -74,7 +73,7 @@ prefixedSectionTitle c = try $ do
   someSpaces
   guard (level <= 5)
   inlns <- inlinesExcluding [SoftBreakParser, HardBreakParser]
-  return . plainElement $ SectionTitle level inlns
+  return $ SectionTitle level inlns
 
 -- | Parse an underlined section title
 underlinedSectionTitle :: Parser BlockElement
@@ -84,7 +83,7 @@ underlinedSectionTitle = try $ do
   (strlen, inlns) <- withColumnCount titleLine <* eol
   lineChar <- titleUnderline strlen
   level <- levelFromLineChar lineChar
-  return . plainElement $ SectionTitle level inlns
+  return $ SectionTitle level inlns
 
 -- | Parse a title underline of length @n@ ± 1
 titleUnderline :: Int -> Parser Char
@@ -114,4 +113,4 @@ paragraph = try $ do
   _ <- skipMany blankline
   attributes <- optional parseAttributes
   contents <- inlines
-  return $ contents `B.paragraphWith'` attributes
+  return $ contents `paragraphWith` attributes
