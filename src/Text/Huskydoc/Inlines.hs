@@ -107,7 +107,13 @@ hardbreak = HardBreak <$ try (someSpaces *> char '+' *> skipSpaces *> eol)
 
 -- | Parse a soft linebreak.
 softbreak :: Parser InlineElement
-softbreak = SoftBreak <$ try (skipSpaces *> void eol *> notFollowedBy blankline)
+softbreak = SoftBreak <$ try inlinesBreak
+
+-- | Parse the end of a line only if the next line contains inlines
+inlinesBreak :: Parser ()
+inlinesBreak = try $ skipSpaces <* void eol
+  <* notFollowedBy blankline
+  <* notFollowedBy (some (oneOf ("-*"::String)) *> someSpaces) -- List item
 
 -- | Parse a simple, markup-less string.
 str :: Parser InlineElement

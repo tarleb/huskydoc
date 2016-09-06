@@ -37,10 +37,12 @@ module Text.Huskydoc.Patterns
   , pattern EmptyAttributes
   -- Plain blocks
   , pattern HorizontalRule
+  , pattern BulletList
   , pattern Paragraph
   , pattern SectionTitle
   -- Rich blocks
   , pattern RichHorizontalRule
+  , pattern RichBulletList
   , pattern RichParagraph
   , pattern RichSectionTitle
   -- Inlines
@@ -69,6 +71,7 @@ import           Text.Huskydoc.Types ( Attributes (..), RichElement (..)
                                      , Document (..), MetaData (..)
                                      , BlockElement, Blocks (..)
                                      , InlineElement, Inlines (..)
+                                     , ListItem (..)
                                      , plainElement , nullAttributes
                                      )
 import qualified Text.Huskydoc.Types as Internal
@@ -104,11 +107,15 @@ toBlocks = Internal.Blocks . Seq.fromList
 
 
 --
--- Inline elements
+-- Misc
 --
 
 -- | Empty attributes
 pattern EmptyAttributes = Attributes []
+
+--
+-- Inline elements
+--
 
 -- | A simple element of emphasized text.
 -- Emphasis :: Inlines -> InlineElement
@@ -173,6 +180,10 @@ pattern RichStrong attr inlns = RichElement attr (Internal.Strong inlns)
 pattern HorizontalRule <- RichElement _ Internal.HorizontalRule
   where HorizontalRule = plainElement Internal.HorizontalRule
 
+-- | Bullet list
+pattern BulletList es <- RichElement _ (Internal.BulletList es)
+  where BulletList = plainElement . Internal.BulletList
+
 -- | Paragraph element
 pattern Paragraph blks <- RichElement _ (Internal.Paragraph blks)
   where Paragraph = plainElement . Internal.Paragraph
@@ -187,6 +198,9 @@ pattern SectionTitle lvl inlns <- RichElement _ (Internal.SectionTitle lvl inlns
 
 -- | Horizontal rule element with attributes
 pattern RichHorizontalRule attr = RichElement attr Internal.HorizontalRule
+
+-- | Bullet (i.e. unordered) list with attributes
+pattern RichBulletList attr es = RichElement attr (Internal.BulletList es)
 
 -- | Paragraph element with attributes
 pattern RichParagraph attr blks = RichElement attr (Internal.Paragraph blks)

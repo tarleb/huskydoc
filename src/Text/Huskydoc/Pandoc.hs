@@ -47,12 +47,18 @@ convertDocument (Document _ bs) = Pandoc.doc . convertBlocks $ bs
 convertBlocks :: Blocks -> Pandoc.Blocks
 convertBlocks = foldr ((<>) . convertBlockElement) mempty . fromBlocks
 
+-- | Convert a single huskydoc block element into pandoc blocks
 convertBlockElement :: BlockElement -> Pandoc.Blocks
 convertBlockElement = \case
   (HorizontalRule)         -> Pandoc.horizontalRule
   (Paragraph inlns)        -> Pandoc.para (convertInlines inlns)
   (SectionTitle lvl inlns) -> Pandoc.header lvl (convertInlines inlns)
+  (BulletList lst)         -> Pandoc.bulletList . concatMap convertListItem $ lst
   _                        -> mempty
+
+-- | Convert a list item to a list of pandoc blocks
+convertListItem :: ListItem -> [Pandoc.Blocks]
+convertListItem = map convertBlockElement . fromListItem
 
 -- | Convert huskydoc inlines into pandoc inlines
 convertInlines :: Inlines -> Pandoc.Inlines

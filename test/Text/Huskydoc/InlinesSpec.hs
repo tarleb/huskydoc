@@ -52,6 +52,10 @@ spec = do
       parseDef softbreak "\n" `shouldParse` SoftBreak
     it "allows spaces before linefeed" $ do
       parseDef softbreak "   \n" `shouldParse` SoftBreak
+    it "should fail if the next line is blank" $ do
+      parseDef softbreak `shouldFailOn` "\n\n"
+    it "should fail if the next line looks like a list item" $ do
+      parseDef softbreak `shouldFailOn` "\n* item\n"
 
   describe "hard linebreaks parser" $ do
     it "parses spaces, continuation char `+`, and crlf" $ do

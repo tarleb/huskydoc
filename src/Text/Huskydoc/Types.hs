@@ -35,6 +35,7 @@ module Text.Huskydoc.Types
   , Inline (..)
   , InlineElement
   , Inlines (..)
+  , ListItem (..)
   , MetaData (..)
   , RichElement (..)
   , nullAttributes
@@ -117,10 +118,17 @@ data Block =
     HorizontalRule
   | Paragraph Inlines
   | SectionTitle Int Inlines
+  | BulletList [ListItem]
   deriving (Show, Eq, Ord)
 
+-- | A single block element, the main building blocks of documents
 type BlockElement = RichElement Block
 
+-- | Elements of block-lists
+newtype ListItem = ListItem { fromListItem :: [BlockElement] }
+  deriving (Show, Eq, Ord)
+
+-- | Sequence of block elements, the basic components of documents
 newtype Blocks = Blocks { fromBlocks :: Seq BlockElement }
   deriving (Show, Eq, Ord)
 

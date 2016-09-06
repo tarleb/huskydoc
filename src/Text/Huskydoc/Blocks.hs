@@ -30,10 +30,12 @@ module Text.Huskydoc.Blocks
   , blocks
   -- individual block parsers
   , horizontalRule
+  , bulletList
   , paragraph
   , sectionTitle
   -- helpers
   , withBlockAttributes
+  , bulletListItem
   ) where
 
 import Control.Applicative ( (<**>) )
@@ -53,7 +55,8 @@ blockElement :: Parser BlockElement
 blockElement =
   many blankline *>
   (fromMaybe mempty <$> optional blockAttributes) <**> choice
-    [ horizontalRule
+    [ bulletList
+    , horizontalRule
     , sectionTitle
     , paragraph
     ] <?> "blocks"
@@ -67,12 +70,38 @@ horizontalRule = RichHorizontalRule <$ try (choice ruleParsers <* blankline)
   where ruleParsers = [ string "---" , string "- - -"
                       , string "***" , string "* * *"]
 
+-- | Parse a bullet list
+bulletList :: Parser (Attributes -> BlockElement)
+bulletList = try $ do
+  marker <- bulletListItemMarker
+  firstItem <- bulletListItem ""
+  flip RichBulletList . (firstItem:) <$> many (bulletListItem marker)
+
+-- | Parse a list element marked by @marker@
+bulletListItem :: String -> Parser ListItem
+bulletListItem marker = try $ do
+  string marker <* someSpaces
+  element <- blockElement <* optional eol
+  return . ListItem . (:[]) $ element
+
+-- | Parse the start marker of a list item
+bulletListItemMarker :: Parser String
+bulletListItemMarker = try $ do
+  first <- oneOf bulletListMarkerChars
+  rest <- many (char first)
+  return (first : rest)
+
+-- | Characters that can be used to mark a list item
+bulletListMarkerChars :: String
+bulletListMarkerChars = "-*"
+
+
 -- | Parse a section title
 sectionTitle :: Parser (Attributes -> BlockElement)
 sectionTitle = try $
-       prefixedSectionTitle '='
-   <|> prefixedSectionTitle '#'
-   <|> underlinedSectionTitle
+      prefixedSectionTitle '='
+  <|> prefixedSectionTitle '#'
+  <|> underlinedSectionTitle
 
 -- | Parse a section title defined using prefix characters
 prefixedSectionTitle :: Char -> Parser (Attributes -> BlockElement)

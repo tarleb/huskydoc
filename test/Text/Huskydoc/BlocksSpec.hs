@@ -86,6 +86,18 @@ spec = do
       parseDef (attribless sectionTitle) `shouldFailOn `"Level0\n====\n"
       parseDef (attribless sectionTitle) `shouldFailOn `"Level0\n========\n"
 
+  describe "bulletListItem parser" $ do
+    it "parses a bullet list item" $ do
+      parseDef (bulletListItem "**") "** one" `shouldParse`
+        ListItem [Paragraph (toInlines [Str "one"])]
+
+  describe "bulletList parser" $ do
+    it "parses an bullet list" $ do
+      parseDef (attribless bulletList) "** one\n** two\n" `shouldParse`
+        BulletList [ ListItem [Paragraph (toInlines [Str "one"])]
+                   , ListItem [Paragraph (toInlines [Str "two"])]
+                   ]
+
 -- | Helper function for attribute-less blocks
 attribless :: Applicative f => f (Attributes -> a) -> f a
 attribless p = p <*> pure mempty
