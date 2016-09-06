@@ -54,22 +54,22 @@ spec = do
     it "strips surrounding spaces" $ do
       parseDef positionalAttr "  verse  " `shouldParse` (PositionalAttr "verse")
 
-  describe "parseAttributes" $ do
+  describe "attributes" $ do
     it "parses a single positional attribute" $ do
-      parseDef parseAttributes "[verse]"
+      parseDef attributes "[verse]"
         `shouldParse` (toAttributes [PositionalAttr "verse"])
     it "parses a single named attribute" $ do
-      parseDef parseAttributes "[role=\"verse\"]"
+      parseDef attributes "[role=\"verse\"]"
         `shouldParse` (toAttributes [NamedAttr "role" "verse"])
     it "parses a many comma-separated positional attributes" $ do
-      parseDef parseAttributes "[verse,rick, roll ]" `shouldParse`
+      parseDef attributes "[verse,rick, roll ]" `shouldParse`
         (toAttributes
          [ PositionalAttr "verse"
          , PositionalAttr "rick"
          , PositionalAttr "roll"
          ])
     it "parses a many comma-separated named attributes" $ do
-      parseDef parseAttributes "[quality=\"medium\", summer=\"hot\", drinks=\"cool\"]"
+      parseDef attributes "[quality=\"medium\", summer=\"hot\", drinks=\"cool\"]"
         `shouldParse` (toAttributes
            [ NamedAttr "quality" "medium"
            , NamedAttr "summer" "hot"

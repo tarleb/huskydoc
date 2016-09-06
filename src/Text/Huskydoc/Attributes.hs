@@ -29,22 +29,20 @@ Parser for element attributes.
 module Text.Huskydoc.Attributes
   ( Attributes (..)
   , Attr (..)
-  , RichElement (..)
+  , attributes
+  , blockAttributes
+  , blockTitle
   , namedAttr
-  , nullAttributes
-  , parseAttributes
-  , plainElement
   , positionalAttr
-  , richElement
   , toAttributes
   ) where
 
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Types
-import Data.Text
+import Data.Text ( pack, strip )
 
-parseAttributes :: Parser Attributes
-parseAttributes =
+attributes :: Parser Attributes
+attributes =
   let parseAttrs = (namedAttr <|> positionalAttr) `sepBy` (comma *> skipSpaces)
   in toAttributes <$> try (between (char '[') (char ']') parseAttrs)
 
@@ -56,6 +54,27 @@ namedAttr = try $ do
 
 positionalAttr :: Parser Attr
 positionalAttr = PositionalAttr . strip . pack <$> try (some (noneOf ("],"::String)))
+
+-- | Title of a block element
+blockTitle :: Parser Attributes
+blockTitle = toAttributes . (:[]) . simpleNamedAttr "title" . pack <$> try title
+  where title = char '.' *> notFollowedBy spaceChar *> someTill anyChar eol
+
+blockId :: Parser Attributes
+blockId = toAttributes . (:[]) . simpleNamedAttr "id" . pack <$> try identifier
+  where identifier = between (string "[[")
+                             (string "]]")
+                             (some (alphaNumChar <|> oneOf ("-_"::String)))
+                     <* skipSpaces <* eol
+
+blockGenericAttributes :: Parser Attributes
+blockGenericAttributes = attributes <* skipSpaces <* eol
+
+-- | All attributes of a block
+blockAttributes :: Parser Attributes
+blockAttributes = try $ do
+  attrList <- some (blockTitle <|> blockId <|> blockGenericAttributes)
+  return $ mconcat attrList
 
 comma :: Parser Char
 comma = char ','

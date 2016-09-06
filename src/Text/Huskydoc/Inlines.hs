@@ -130,11 +130,11 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
     singleDelimitedMarkup :: Char -> Parser InlineElement
     singleDelimitedMarkup c' = try $ do
       guard =<< notAfterString
-      attributes <- optional parseAttributes
+      attributes' <- optional attributes
       char c'
       notFollowedBy spaceChar
       elements <- someTill inlineElement (try endChar)
-      return $ bldr (fromMaybe nullAttributes attributes) (toInlines elements)
+      return $ bldr (fromMaybe nullAttributes attributes') (toInlines elements)
       where
         endChar = do
           guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
@@ -143,10 +143,10 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
 
     doubleDelimitedMarkup :: Char -> Parser InlineElement
     doubleDelimitedMarkup c' = try $ do
-      attributes <- optional parseAttributes
+      attributes' <- optional attributes
       string [c',c']
       elements <- someTill inlineElement (try $ string [c',c'])
-      return $ bldr (fromMaybe nullAttributes attributes) (toInlines elements)
+      return $ bldr (fromMaybe nullAttributes attributes') (toInlines elements)
 
 -- | Parse a links
 link :: Parser InlineElement

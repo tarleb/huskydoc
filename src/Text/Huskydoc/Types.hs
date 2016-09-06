@@ -47,6 +47,7 @@ module Text.Huskydoc.Types
   ) where
 
 import Data.Foldable (toList)
+import Data.Monoid ( (<>) )
 import Data.Sequence
 import Data.Text
 
@@ -61,6 +62,10 @@ data MetaData = MetaData
 -- | Element attributes
 newtype Attributes = Attributes { fromAttributes :: [Attr] }
   deriving (Show, Eq, Ord)
+
+instance Monoid Attributes where
+  (Attributes a) `mappend` (Attributes b) = Attributes (a <> b)
+  mempty = nullAttributes
 
 data Attr =
     NamedAttr Text Text

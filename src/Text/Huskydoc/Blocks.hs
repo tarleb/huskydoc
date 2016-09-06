@@ -32,13 +32,17 @@ module Text.Huskydoc.Blocks
   , horizontalRule
   , paragraph
   , sectionTitle
+  -- helpers
+  , withBlockAttributes
   ) where
 
+import Control.Applicative ( (<**>) )
 import Control.Monad ( guard, mzero, void )
 import Data.List ( findIndex )
-import Text.Huskydoc.Attributes
+import Data.Maybe ( fromMaybe )
+import Text.Huskydoc.Attributes ( blockAttributes )
 import Text.Huskydoc.Inlines ( inlines, inlinesExcluding
-                             , InlineParser(..))
+                             , InlineParser(..) )
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Patterns
 
@@ -46,44 +50,47 @@ blocks :: Parser Blocks
 blocks = toBlocks <$> some blockElement
 
 blockElement :: Parser BlockElement
-blockElement = choice
-  [ horizontalRule
-  , sectionTitle
-  , paragraph
-  ] <?> "blocks"
+blockElement =
+  many blankline *>
+  (fromMaybe mempty <$> optional blockAttributes) <**> choice
+    [ horizontalRule
+    , sectionTitle
+    , paragraph
+    ] <?> "blocks"
+
+withBlockAttributes :: Parser (Attributes -> BlockElement) -> Parser BlockElement
+withBlockAttributes p = fromMaybe mempty <$> optional blockAttributes <**> p
 
 -- | Parse an horizontal rule
-horizontalRule :: Parser BlockElement
-horizontalRule = HorizontalRule <$ try (choice ruleParsers <* blankline)
+horizontalRule :: Parser (Attributes -> BlockElement)
+horizontalRule = RichHorizontalRule <$ try (choice ruleParsers <* blankline)
   where ruleParsers = [ string "---" , string "- - -"
                       , string "***" , string "* * *"]
 
 -- | Parse a section title
-sectionTitle :: Parser BlockElement
+sectionTitle :: Parser (Attributes -> BlockElement)
 sectionTitle = try $
        prefixedSectionTitle '='
    <|> prefixedSectionTitle '#'
    <|> underlinedSectionTitle
 
 -- | Parse a section title defined using prefix characters
-prefixedSectionTitle :: Char -> Parser BlockElement
+prefixedSectionTitle :: Char -> Parser (Attributes -> BlockElement)
 prefixedSectionTitle c = try $ do
-  many blankline
   level <- (\n -> n - 1) . length <$> some (char c)
   someSpaces
   guard (level <= 5)
   inlns <- inlinesExcluding [SoftBreakParser, HardBreakParser]
-  return $ SectionTitle level inlns
+  return $ \a -> RichSectionTitle a level inlns
 
 -- | Parse an underlined section title
-underlinedSectionTitle :: Parser BlockElement
+underlinedSectionTitle :: Parser (Attributes -> BlockElement)
 underlinedSectionTitle = try $ do
-  many blankline
   let titleLine = inlinesExcluding [SoftBreakParser, HardBreakParser]
   (strlen, inlns) <- withColumnCount titleLine <* eol
   lineChar <- titleUnderline strlen
   level <- levelFromLineChar lineChar
-  return $ SectionTitle level inlns
+  return $ \a -> RichSectionTitle a level inlns
 
 -- | Parse a title underline of length @n@ ± 1
 titleUnderline :: Int -> Parser Char
@@ -108,9 +115,8 @@ titleUnderlineChars :: String
 titleUnderlineChars = "=-~^"
 
 -- | A simple paragraph
-paragraph :: Parser BlockElement
+paragraph :: Parser (Attributes -> BlockElement)
 paragraph = try $ do
   _ <- skipMany blankline
-  attributes <- optional parseAttributes
   contents <- inlines
-  return $ contents `paragraphWith` attributes
+  return $ flip RichParagraph contents
