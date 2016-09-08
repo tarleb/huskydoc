@@ -13,7 +13,7 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
-
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-|
 Module      :  Text.Huskydoc.InlinesSpec
@@ -84,7 +84,7 @@ spec = do
 
   describe "strong parser" $ do
     it "parses text between asterisks as strong" $
-      parseDef strong "*strong*" `shouldParse` (Strong $ toInlines [Str "strong"])
+      parseDef strong "*strong*" `shouldParse` (Strong [Str "strong"])
     it "fails if opening asterisk is succeded by space" $
       parseDef strong `shouldFailOn` "* not strong*"
     it "fails if closing asterisk is preceded by space" $
@@ -98,14 +98,14 @@ spec = do
       parseDef (strong <|> symbol *> symbol *> str) "**notStrong"
         `shouldParse` (Str "notStrong")
     it "parses text delimited by double asterisk as strong" $
-      parseDef strong "**strong**" `shouldParse` (Strong $ toInlines [Str "strong"])
+      parseDef strong "**strong**" `shouldParse` (Strong [Str "strong"])
     it "parses double-delimited text even if preceded by string" $
       parseDef (str *> strong) "str**strong**" `shouldParse`
-        (Strong $ toInlines [Str "strong"])
+        Strong [Str "strong"]
 
   describe "emphasis parser" $ do
     it "parses text between underscores as emphasized" $
-      parseDef emphasis "_emph_" `shouldParse` (Emphasis $ toInlines [Str "emph"])
+      parseDef emphasis "_emph_" `shouldParse` (Emphasis [Str "emph"])
     it "treats umlaut characters as alpha-numeric" $
       parseDef (emphasis *> str) `shouldFailOn` "_nope_ä"
 
@@ -116,18 +116,18 @@ spec = do
   describe "nested inlines" $ do
     it "allows emphasis to be nested in strong text" $
       parseDef strong "*__nested__*" `shouldParse`
-        (Strong $ toInlines [Emphasis $ toInlines [Str "nested"]])
+        Strong [Emphasis [Str "nested"]]
     it "allows strong to be nested in emphasized text" $
       parseDef emphasis "_*nested*_" `shouldParse`
-        (Emphasis $ toInlines [Strong $ toInlines [Str "nested"]])
+        Emphasis [Strong [Str "nested"]]
 
   describe "inlines in succession" $ do
     it "parses emphasized directly succeded by strong text" $
       parseDef (emphasis *> strong) "_emph_*strong*" `shouldParse`
-        (Strong $ toInlines [Str "strong"])
+        Strong [Str "strong"]
     it "parses strong directly succeded by emphasized text" $
       parseDef (strong *> emphasis) "*strong*_emph_" `shouldParse`
-        (Emphasis $ toInlines [Str "emph"])
+        Emphasis [Str "emph"]
 
   describe "inlineElement parser" $ do
     it "doesn't parse blank lines" $ do
@@ -146,6 +146,6 @@ spec = do
   describe "link parser" $ do
     it "parses a simple link" $ do
       parseDef link "https://ccc.de/[*Chaos* Computer Club]" `shouldParse`
-        Link "https://ccc.de/" (toInlines [ Strong (toInlines [Str "Chaos"])
-                                          , Space, Str "Computer"
-                                          , Space, Str "Club"])
+        Link "https://ccc.de/" [ Strong [Str "Chaos"]
+                               , Space, Str "Computer"
+                               , Space, Str "Club"]

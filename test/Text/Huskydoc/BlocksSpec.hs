@@ -13,7 +13,7 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
-
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-|
 Module      :  Text.Huskydoc.BlocksSpec
@@ -57,7 +57,7 @@ spec = do
   describe "paragraph" $ do
     it "parses a simple paragraph" $ do
       parseDef (attribless paragraph) "Single line paragraph" `shouldParse`
-        (Paragraph $ toInlines [Str "Single", Space, Str "line", Space, Str "paragraph"])
+        (Paragraph [Str "Single", Space, Str "line", Space, Str "paragraph"])
     it "should fail on empty input" $
       parseDef (attribless paragraph) `shouldFailOn` ""
     it "should fail on whitespace-only lines" $
@@ -66,19 +66,19 @@ spec = do
   describe "sectionTitle" $ do
     it "parses a section title" $ do
       parseDef (attribless sectionTitle) "== Level1" `shouldParse`
-        (SectionTitle 1 (toInlines [Str "Level1"]))
+        (SectionTitle 1 [Str "Level1"])
     it "should only consume inline text in the current line" $ do
       parseDef (attribless sectionTitle) "== Level1\nNext line" `shouldParse`
-        (SectionTitle 1 (toInlines [Str "Level1"]))
+        (SectionTitle 1 [Str "Level1"])
     it "should parse underlined titles" $ do
       parseDef (attribless sectionTitle) "Level0\n======\n" `shouldParse`
-        (SectionTitle 0 (toInlines [Str "Level0"]))
+        (SectionTitle 0 [Str "Level0"])
       parseDef (attribless sectionTitle) "Level1\n------\n" `shouldParse`
-        (SectionTitle 1 (toInlines [Str "Level1"]))
+        (SectionTitle 1 [Str "Level1"])
       parseDef (attribless sectionTitle) "Level2\n~~~~~~\n" `shouldParse`
-        (SectionTitle 2 (toInlines [Str "Level2"]))
+        (SectionTitle 2 [Str "Level2"])
       parseDef (attribless sectionTitle) "Level3\n^^^^^^\n" `shouldParse`
-        (SectionTitle 3 (toInlines [Str "Level3"]))
+        (SectionTitle 3 [Str "Level3"])
     it "should succeed when combined with block attributes parser" $ do
       parseDef (withBlockAttributes sectionTitle) `shouldSucceedOn`
         "[[cheat-sheet]]\nAsciiDoc Mini Cheat Sheet\n~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -89,13 +89,13 @@ spec = do
   describe "bulletListItem parser" $ do
     it "parses a bullet list item" $ do
       parseDef (bulletListItem "**") "** one" `shouldParse`
-        ListItem [Paragraph (toInlines [Str "one"])]
+        ListItem [Paragraph [Str "one"]]
 
   describe "bulletList parser" $ do
     it "parses an bullet list" $ do
       parseDef (attribless bulletList) "** one\n** two\n" `shouldParse`
-        BulletList [ ListItem [Paragraph (toInlines [Str "one"])]
-                   , ListItem [Paragraph (toInlines [Str "two", SoftBreak])]
+        BulletList [ ListItem [Paragraph [Str "one"]]
+                   , ListItem [Paragraph [Str "two", SoftBreak]]
                    ]
 
   describe "tableCell parser" $ do
@@ -108,8 +108,8 @@ spec = do
     it "parses a table row, ended by eol" $ do
       parseDef tableRow `shouldSucceedOn `"| hello | world\n"
       parseDef tableRow "| hello | world \n" `shouldParse `
-        (TableRow [ TableCell $ toBlocks [Paragraph . toInlines $ [Str "hello"]]
-                  , TableCell $ toBlocks [Paragraph . toInlines $ [Str "world"]]])
+        (TableRow [ TableCell [Paragraph [Str "hello"]]
+                  , TableCell [Paragraph [Str "world"]]])
 
   describe "table parser" $ do
     it "parses a simple table" $ do

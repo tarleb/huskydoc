@@ -50,21 +50,22 @@ import Data.Maybe ( fromMaybe )
 import Data.List ( intercalate )
 import Data.Monoid ( (<>) )
 import Data.Text (Text, pack)
+import GHC.Exts ( IsList(..) )
 import Text.Huskydoc.Attributes
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Patterns
 
 -- | Parse one or more inline elements
 inlines :: Parser Inlines
-inlines = toInlines <$> some inlineElement
+inlines = fromList <$> some inlineElement
 
 -- | Parse one or more inlines, excluding some inline element parsers
 inlinesExcluding :: [InlineParser] -> Parser Inlines
-inlinesExcluding excl = toInlines <$> some (inlineElementExcluding excl)
+inlinesExcluding excl = fromList <$> some (inlineElementExcluding excl)
 
 -- | One or more inlines surrounded but @start@ and @end@
 inlinesBetween :: Parser a -> Parser b -> Parser Inlines
-inlinesBetween start end = toInlines <$> (start *> someTill inlineElement end)
+inlinesBetween start end = fromList <$> (start *> someTill inlineElement end)
 
 data InlineParser =
     EmphasisParser
@@ -140,7 +141,7 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
       char c'
       notFollowedBy spaceChar
       elements <- someTill inlineElement (try endChar)
-      return $ bldr (fromMaybe nullAttributes attributes') (toInlines elements)
+      return $ bldr (fromMaybe nullAttributes attributes') (fromList elements)
       where
         endChar = do
           guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
@@ -152,7 +153,7 @@ quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
       attributes' <- optional attributes
       string [c',c']
       elements <- someTill inlineElement (try $ string [c',c'])
-      return $ bldr (fromMaybe nullAttributes attributes') (toInlines elements)
+      return $ bldr (fromMaybe nullAttributes attributes') (fromList elements)
 
 -- | Parse a links
 link :: Parser InlineElement

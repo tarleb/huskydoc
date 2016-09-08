@@ -13,7 +13,7 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
-
+{-# LANGUAGE OverloadedLists #-}
 {-|
 Module      :  Text.Huskydoc.Blocks
 Copyright   :  © 2016 Albert Krewinkel
@@ -46,6 +46,7 @@ import Control.Monad ( guard, mzero, void )
 import Data.List ( findIndex )
 import Data.Maybe ( fromMaybe )
 import Data.Text ( pack , strip )
+import GHC.Exts ( IsList(..) )
 import Text.Huskydoc.Attributes ( blockAttributes )
 import Text.Huskydoc.Inlines ( inlines, inlinesExcluding
                              , InlineParser(..) )
@@ -53,18 +54,23 @@ import Text.Huskydoc.Parsing
 import Text.Huskydoc.Patterns
 
 blocks :: Parser Blocks
-blocks = toBlocks <$> some blockElement
+blocks = fromList <$> some blockElement
 
 blockElement :: Parser BlockElement
 blockElement =
-  many blankline *>
-  (fromMaybe mempty <$> optional blockAttributes) <**> choice
-    [ bulletList
-    , horizontalRule
-    , sectionTitle
-    , table
-    , paragraph
-    ] <?> "blocks"
+  many blankline
+  *> (fromMaybe mempty <$> optional blockAttributes)
+  <**> choice blockElementParsers
+  <?> "block element"
+
+blockElementParsers :: [Parser (Attributes -> BlockElement)]
+blockElementParsers =
+  [ bulletList
+  , horizontalRule
+  , sectionTitle
+  , table
+  , paragraph
+  ]
 
 withBlockAttributes :: Parser (Attributes -> BlockElement) -> Parser BlockElement
 withBlockAttributes p = fromMaybe mempty <$> optional blockAttributes <**> p
@@ -72,8 +78,10 @@ withBlockAttributes p = fromMaybe mempty <$> optional blockAttributes <**> p
 -- | Parse an horizontal rule
 horizontalRule :: Parser (Attributes -> BlockElement)
 horizontalRule = RichHorizontalRule <$ try (choice ruleParsers <* blankline)
-  where ruleParsers = [ string "---" , string "- - -"
-                      , string "***" , string "* * *"]
+  where
+    ruleParsers :: [Parser String]
+    ruleParsers = [ string "---" , string "- - -"
+                  , string "***" , string "* * *"]
 
 -- | Parse a bullet list
 bulletList :: Parser (Attributes -> BlockElement)
@@ -165,7 +173,7 @@ tableRow = try $ do
 -- | Parse a single table cell
 tableCell :: Parser TableCell
 tableCell =
-  (\t -> TableCell $ toBlocks [Paragraph . toInlines $ [ Str . strip . pack $  t ]])
+  (\t -> TableCell [Paragraph [Str . strip . pack $ t]])
   <$> (try $ some (noneOf ("\n\r|="::String)))
 
 -- | A simple paragraph

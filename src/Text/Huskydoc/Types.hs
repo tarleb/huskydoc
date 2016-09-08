@@ -13,7 +13,8 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
-
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE TypeFamilies #-}
 {-|
 Module      :  Text.Huskydoc.Types
 Copyright   :  © 2016 Albert Krewinkel
@@ -45,14 +46,14 @@ module Text.Huskydoc.Types
   , richElement
   , simpleNamedAttr
   , toAttributes
-  , toBlocksList
-  , toInlinesList
   ) where
 
-import Data.Foldable (toList)
-import Data.Monoid ( (<>) )
-import Data.Sequence
-import Data.Text
+import           Data.Foldable as Foldable
+import           Data.Monoid ( (<>) )
+import           Data.Sequence ( Seq )
+import qualified Data.Sequence as Seq
+import           Data.Text
+import           GHC.Exts ( IsList (..) )
 
 -- | The full document
 data Document = Document MetaData Blocks deriving (Show, Eq)
@@ -109,11 +110,14 @@ data Inline =
 
 type InlineElement = RichElement Inline
 
+-- | Inlines are the basic components of larger text elements.
 newtype Inlines = Inlines { fromInlines :: Seq InlineElement }
   deriving (Show, Eq, Ord)
 
-toInlinesList :: Inlines -> [InlineElement]
-toInlinesList = toList . fromInlines
+instance IsList Inlines where
+  type Item Inlines = InlineElement
+  fromList = Inlines . Seq.fromList
+  toList   = Foldable.toList . fromInlines
 
 -- | Block types
 data Block =
@@ -127,6 +131,11 @@ data Block =
 -- | Table row
 newtype TableRow = TableRow { fromTableRow :: [TableCell] }
   deriving (Eq, Ord, Show)
+
+instance IsList TableRow where
+  type Item TableRow = TableCell
+  fromList = TableRow
+  toList   = fromTableRow
 
 -- | A table cell with span info and content
 data TableCell = TableCell
@@ -144,5 +153,7 @@ newtype ListItem = ListItem { fromListItem :: [BlockElement] }
 newtype Blocks = Blocks { fromBlocks :: Seq BlockElement }
   deriving (Show, Eq, Ord)
 
-toBlocksList :: Blocks -> [BlockElement]
-toBlocksList = toList . fromBlocks
+instance IsList Blocks where
+  type Item Blocks = BlockElement
+  fromList = Blocks . Seq.fromList
+  toList   = Foldable.toList . fromBlocks

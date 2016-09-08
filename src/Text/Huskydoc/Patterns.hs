@@ -28,8 +28,6 @@ Patterns for Huskydoc elements
 -}
 module Text.Huskydoc.Patterns
   ( module Text.Huskydoc.Types
-  , toInlines
-  , toBlocks
   -- document
   , metaData
   , emptyMeta
@@ -95,18 +93,9 @@ metaData metaDataTitle = MetaData {..}
 --
 -- wrappers
 --
-
--- | Turn a list of inline elements to inlines.
-toInlines :: [InlineElement] -> Inlines
-toInlines = Internal.Inlines . Seq.fromList
-
 -- | Empty inlines
 emptyInlines :: Inlines
 emptyInlines = Internal.Inlines Seq.empty
-
--- | Convert a list of block elements into @Blocks@
-toBlocks :: [BlockElement] -> Blocks
-toBlocks = Internal.Blocks . Seq.fromList
 
 
 --

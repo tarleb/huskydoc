@@ -13,7 +13,7 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
-
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-|
 Module      :  Text.Huskydoc.DocumentSpec
@@ -48,6 +48,4 @@ spec = do
   describe "document" $ do
     it "parses a document" $ do
       parseDef document "Lorem ipsum" `shouldParse`
-        (Document emptyMeta
-         (toBlocks . (:[]) . Paragraph $
-          toInlines [Str "Lorem", Space, Str "ipsum"]))
+        Document emptyMeta [Paragraph [Str "Lorem", Space, Str "ipsum"]]
