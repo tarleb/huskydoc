@@ -40,11 +40,13 @@ module Text.Huskydoc.Patterns
   , pattern BulletList
   , pattern Paragraph
   , pattern SectionTitle
+  , pattern Table
   -- Rich blocks
   , pattern RichHorizontalRule
   , pattern RichBulletList
   , pattern RichParagraph
   , pattern RichSectionTitle
+  , pattern RichTable
   -- Inlines
   , pattern Emphasis
   , pattern HardBreak
@@ -72,6 +74,7 @@ import           Text.Huskydoc.Types ( Attributes (..), RichElement (..)
                                      , BlockElement, Blocks (..)
                                      , InlineElement, Inlines (..)
                                      , ListItem (..)
+                                     , TableRow (..), TableCell (..)
                                      , plainElement , nullAttributes
                                      )
 import qualified Text.Huskydoc.Types as Internal
@@ -192,6 +195,9 @@ pattern Paragraph blks <- RichElement _ (Internal.Paragraph blks)
 pattern SectionTitle lvl inlns <- RichElement _ (Internal.SectionTitle lvl inlns)
   where SectionTitle lvl inlns = plainElement (Internal.SectionTitle lvl inlns)
 
+pattern Table rows <- RichElement _ (Internal.Table rows)
+  where Table rows = plainElement (Internal.Table rows)
+
 --
 -- Block elements with attributes ("Rich" block elements)
 --
@@ -207,6 +213,9 @@ pattern RichParagraph attr blks = RichElement attr (Internal.Paragraph blks)
 
 -- | Section title element with attributes
 pattern RichSectionTitle attr lvl blks = RichElement attr (Internal.SectionTitle lvl blks)
+
+-- | Table with attributes
+pattern RichTable attr rows = RichElement attr (Internal.Table rows)
 
 
 paragraphWith :: Inlines -> Maybe Attributes -> BlockElement

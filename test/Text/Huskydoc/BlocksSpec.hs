@@ -32,7 +32,7 @@ module Text.Huskydoc.BlocksSpec
   ) where
 
 import Text.Huskydoc.Blocks
-import Text.Huskydoc.Parsing ( parseDef )
+import Text.Huskydoc.Parsing ( parseDef, char )
 import Text.Huskydoc.Patterns
 
 import Test.Hspec
@@ -95,8 +95,25 @@ spec = do
     it "parses an bullet list" $ do
       parseDef (attribless bulletList) "** one\n** two\n" `shouldParse`
         BulletList [ ListItem [Paragraph (toInlines [Str "one"])]
-                   , ListItem [Paragraph (toInlines [Str "two"])]
+                   , ListItem [Paragraph (toInlines [Str "two", SoftBreak])]
                    ]
+
+  describe "tableCell parser" $ do
+    it "parses a single table cell, ended by eol or another cell" $ do
+      parseDef (tableCell *> char '|') `shouldSucceedOn `"hello |"
+    it "parses a single table cell, ended by eol or another cell" $ do
+      parseDef (tableCell *> char '\n') `shouldSucceedOn `"hello \n"
+
+  describe "tableRow parser" $ do
+    it "parses a table row, ended by eol" $ do
+      parseDef tableRow `shouldSucceedOn `"| hello | world\n"
+      parseDef tableRow "| hello | world \n" `shouldParse `
+        (TableRow [ TableCell $ toBlocks [Paragraph . toInlines $ [Str "hello"]]
+                  , TableCell $ toBlocks [Paragraph . toInlines $ [Str "world"]]])
+
+  describe "table parser" $ do
+    it "parses a simple table" $ do
+      parseDef (attribless table) `shouldSucceedOn` "|===\n|moin | moin\n|===\n"
 
 -- | Helper function for attribute-less blocks
 attribless :: Applicative f => f (Attributes -> a) -> f a

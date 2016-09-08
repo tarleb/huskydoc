@@ -54,11 +54,22 @@ convertBlockElement = \case
   (Paragraph inlns)        -> Pandoc.para (convertInlines inlns)
   (SectionTitle lvl inlns) -> Pandoc.header lvl (convertInlines inlns)
   (BulletList lst)         -> Pandoc.bulletList . concatMap convertListItem $ lst
+  (Table rows)             -> let pandocRows = map convertRows rows
+                                  headers = map (const mempty) (head pandocRows)
+                              in Pandoc.simpleTable headers pandocRows
   _                        -> mempty
 
 -- | Convert a list item to a list of pandoc blocks
 convertListItem :: ListItem -> [Pandoc.Blocks]
 convertListItem = map convertBlockElement . fromListItem
+
+-- | Convert rows
+convertRows :: TableRow -> [Pandoc.Blocks]
+convertRows = map convertTableCell . fromTableRow
+
+-- | Convert a table cell to pandoc blocks
+convertTableCell :: TableCell -> Pandoc.Blocks
+convertTableCell = convertBlocks . tableCellContent
 
 -- | Convert huskydoc inlines into pandoc inlines
 convertInlines :: Inlines -> Pandoc.Inlines

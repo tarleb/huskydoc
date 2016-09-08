@@ -33,15 +33,19 @@ module Text.Huskydoc.Blocks
   , bulletList
   , paragraph
   , sectionTitle
-  -- helpers
+  , table
+  -- helpers and intermediary parsers
   , withBlockAttributes
   , bulletListItem
+  , tableCell
+  , tableRow
   ) where
 
 import Control.Applicative ( (<**>) )
 import Control.Monad ( guard, mzero, void )
 import Data.List ( findIndex )
 import Data.Maybe ( fromMaybe )
+import Data.Text ( pack , strip )
 import Text.Huskydoc.Attributes ( blockAttributes )
 import Text.Huskydoc.Inlines ( inlines, inlinesExcluding
                              , InlineParser(..) )
@@ -58,6 +62,7 @@ blockElement =
     [ bulletList
     , horizontalRule
     , sectionTitle
+    , table
     , paragraph
     ] <?> "blocks"
 
@@ -142,6 +147,26 @@ levelFromLineChar c =
 -- of the underlined header.
 titleUnderlineChars :: String
 titleUnderlineChars = "=-~^"
+
+-- | Parse a table
+table :: Parser (Attributes -> BlockElement)
+table = try $ do
+  let tableBoundary = try $ string "|===" <* optional (many (char '=')) <* skipSpaces <* eol
+  flip RichTable <$> (tableBoundary *> some tableRow <* tableBoundary)
+
+-- | Parse a simple, single line, table row
+tableRow :: Parser TableRow
+tableRow = try $ do
+  char '|'
+  cells <- tableCell `sepBy1` (char '|')
+  skipSpaces <* eol
+  return $ TableRow cells
+
+-- | Parse a single table cell
+tableCell :: Parser TableCell
+tableCell =
+  (\t -> TableCell $ toBlocks [Paragraph . toInlines $ [ Str . strip . pack $  t ]])
+  <$> (try $ some (noneOf ("\n\r|="::String)))
 
 -- | A simple paragraph
 paragraph :: Parser (Attributes -> BlockElement)

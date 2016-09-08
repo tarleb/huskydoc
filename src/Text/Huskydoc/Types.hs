@@ -38,6 +38,8 @@ module Text.Huskydoc.Types
   , ListItem (..)
   , MetaData (..)
   , RichElement (..)
+  , TableRow (..)
+  , TableCell (..)
   , nullAttributes
   , plainElement
   , richElement
@@ -119,7 +121,17 @@ data Block =
   | Paragraph Inlines
   | SectionTitle Int Inlines
   | BulletList [ListItem]
+  | Table [TableRow]
   deriving (Show, Eq, Ord)
+
+-- | Table row
+newtype TableRow = TableRow { fromTableRow :: [TableCell] }
+  deriving (Eq, Ord, Show)
+
+-- | A table cell with span info and content
+data TableCell = TableCell
+  { tableCellContent :: Blocks}
+  deriving (Eq, Ord, Show)
 
 -- | A single block element, the main building blocks of documents
 type BlockElement = RichElement Block
