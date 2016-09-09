@@ -48,6 +48,7 @@ module Text.Huskydoc.Patterns
   -- Inlines
   , pattern Emphasis
   , pattern HardBreak
+  , pattern Image
   , pattern Link
   , pattern SoftBreak
   , pattern Space
@@ -59,6 +60,7 @@ module Text.Huskydoc.Patterns
   -- Rich inlines
   , pattern RichEmphasis
   , pattern RichHardBreak
+  , pattern RichImage
   , pattern RichLink
   , pattern RichSoftBreak
   , pattern RichSpace
@@ -124,6 +126,10 @@ pattern Emphasis inlns <- RichElement _ (Internal.Emphasis inlns)
 pattern HardBreak <- RichElement _ Internal.LineBreak
   where HardBreak = plainElement Internal.LineBreak
 
+-- | Image element with image source
+pattern Image src <- RichElement _ (Internal.Image src)
+  where Image src = plainElement $ Internal.Image src
+
 -- | Link element with target location and descriptions
 pattern Link ref desc <- RichElement _ (Internal.Link ref desc)
   where Link ref desc = plainElement $ Internal.Link ref desc
@@ -182,6 +188,9 @@ pattern RichEmphasis attr inlns = RichElement attr (Internal.Emphasis inlns)
 
 -- | Hard linebreak element with attributes
 pattern RichHardBreak attrs = RichElement attrs Internal.LineBreak
+
+-- | Image element with attributes
+pattern RichImage attrs src = RichElement attrs (Internal.Image src)
 
 -- | Link element with target location, descriptions and attributes
 pattern RichLink attr ref desc <- RichElement attr (Internal.Link ref desc)

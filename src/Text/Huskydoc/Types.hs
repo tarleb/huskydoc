@@ -100,6 +100,7 @@ simpleNamedAttr k v = NamedAttr k v
 -- | Inline text types.
 data Inline =
     Emphasis Inlines
+  | Image Text
   | LineBreak
   | Link Text Inlines
   | SoftBreak

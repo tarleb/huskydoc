@@ -143,6 +143,11 @@ spec = do
     it "doesn't parse blank lines" $ do
       parseDef inlineElement `shouldFailOn` "\n\n"
 
+  describe "image element parser" $ do
+    it "parses an inline image element" $ do
+      parseDef image "image:sunset.jpg[]" `shouldParse`
+        Image "sunset.jpg"
+
   describe "url parser" $ do
     it "parses a simple url without a path" $ do
       parseDef url "http://pandoc.org" `shouldParse` "http://pandoc.org"

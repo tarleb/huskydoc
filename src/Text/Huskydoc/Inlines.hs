@@ -34,6 +34,7 @@ module Text.Huskydoc.Inlines
   -- Single inline parsers
   , emphasis
   , hardbreak
+  , image
   , link
   , softbreak
   , str
@@ -72,6 +73,7 @@ inlinesBetween start end = fromList <$> (start *> someTill inlineElement end)
 data InlineParser =
     EmphasisParser
   | HardBreakParser
+  | ImageParser
   | SoftBreakParser
   | StrParser
   | StrongParser
@@ -92,6 +94,7 @@ inlineParsers =
   , (EmphasisParser, emphasis)
   , (SubscriptParser, subscript)
   , (SuperscriptParser, superscript)
+  , (ImageParser, image)
   , (StrParser, str)
   , (SymbolParser, symbol)
   ]
@@ -176,6 +179,17 @@ unconstrainedQuotedText bldr delimiter = try $ do
   delimiter
   elements <- someTill inlineElement delimiter
   return $ bldr (fromMaybe nullAttributes attribs) (fromList elements)
+
+--
+-- Images
+--
+image :: Parser InlineElement
+image = try $ do
+  let disallowedSourceChars = "[] " <> specialCharacters :: String
+  string "image:"
+  src <- pack <$> manyTill (noneOf disallowedSourceChars) (lookAhead $ char '[')
+  attribs <- attributes
+  return $ RichImage attribs src
 
 -- | Parse a links
 link :: Parser InlineElement

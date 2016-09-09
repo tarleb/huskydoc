@@ -85,4 +85,5 @@ convertInlineElement = \case
   (Strong   inlns) -> Pandoc.strong . convertInlines $ inlns
   (Subscript is)   -> Pandoc.subscript . convertInlines $ is
   (Superscript is) -> Pandoc.superscript . convertInlines $ is
+  (Image src)      -> Pandoc.image (unpack src) mempty mempty
   _                -> mempty
