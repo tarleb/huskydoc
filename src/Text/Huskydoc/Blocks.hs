@@ -45,7 +45,6 @@ import Control.Applicative ( (<**>) )
 import Control.Monad ( guard, mzero, void )
 import Data.List ( findIndex )
 import Data.Maybe ( fromMaybe )
-import Data.Text ( pack , strip )
 import GHC.Exts ( IsList(..) )
 import Text.Huskydoc.Attributes ( blockAttributes )
 import Text.Huskydoc.Inlines ( inlines, inlinesExcluding
@@ -159,12 +158,15 @@ titleUnderlineChars = "=-~^"
 -- | Parse a table
 table :: Parser (Attributes -> BlockElement)
 table = try $ do
-  let tableBoundary = try $ string "|===" <* optional (many (char '=')) <* skipSpaces <* eol
   flip RichTable <$> (tableBoundary *> some tableRow <* tableBoundary)
+
+tableBoundary :: Parser String
+tableBoundary = try $ string "|===" <* optional (many (char '=')) <* skipSpaces <* eol
 
 -- | Parse a simple, single line, table row
 tableRow :: Parser TableRow
 tableRow = try $ do
+  notFollowedBy tableBoundary
   char '|'
   cells <- tableCell `sepBy1` (char '|')
   skipSpaces <* eol
@@ -173,8 +175,10 @@ tableRow = try $ do
 -- | Parse a single table cell
 tableCell :: Parser TableCell
 tableCell =
-  (\t -> TableCell [Paragraph [Str . strip . pack $ t]])
-  <$> (try $ some (noneOf ("\n\r|="::String)))
+  let cellInlines = stripInlines . mconcat <$> try
+        (withForbiddenCharacter '|' $
+           some (inlinesExcluding [SoftBreakParser, HardBreakParser]))
+  in (\inlns -> TableCell [Paragraph inlns]) <$> cellInlines
 
 -- | A simple paragraph
 paragraph :: Parser (Attributes -> BlockElement)

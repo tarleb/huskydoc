@@ -30,6 +30,7 @@ module Text.Huskydoc.Parsing
   ( ParserState (..)
   , HuskydocError
   , blankline
+  , getForbiddenCharacters
   , isAfterString
   , isAfterDelimitedElement
   , markEndOfStr
@@ -40,6 +41,7 @@ module Text.Huskydoc.Parsing
   , someSpaces
   , spaceChar
   , withColumnCount
+  , withForbiddenCharacter
   -- Re-export Megaparsec types
   , Parser
   , module Text.Megaparsec
@@ -49,7 +51,7 @@ import           Control.Monad ( void )
 import qualified Control.Monad.Trans.State as TransState
 import           Control.Monad.Trans.Class (lift)
 import           Data.Default ( Default(..) )
-import           Data.Text
+import           Data.Text ( Text )
 import           Text.Megaparsec hiding ( spaceChar )
 
 #if MIN_VERSION_megaparsec(5,0,0)
@@ -62,7 +64,9 @@ type HuskydocError = ParseError
 
 -- | Parser state
 data ParserState = ParserState
-  { stateLastStrPos :: Maybe SourcePos -- ^ End position of the last Str
+  { stateForbiddenCharacters :: [Char]   -- ^ List of chars currently not
+                                         -- allowed in inlines
+  , stateLastStrPos :: Maybe SourcePos -- ^ End position of the last Str
   , stateLastDelimitedElementPos :: Maybe SourcePos -- ^ End of the last
                                                     -- element delimited by
                                                     -- markup characters
@@ -70,13 +74,13 @@ data ParserState = ParserState
 
 instance Default ParserState where
   def = ParserState
-        { stateLastStrPos = Nothing
+        { stateForbiddenCharacters = []
+        , stateLastStrPos = Nothing
         , stateLastDelimitedElementPos = Nothing
         }
 
 -- | Helper function to test parsers.  This sets the source name to the empty
 --   string and uses the default parser state.
---  FIXME: Changing type signatures are a terrible idea
 parseDef :: Parser a -> Text -> Either HuskydocError a
 parseDef p txt = flip TransState.evalState def $  runParserT p "" txt
 
@@ -108,6 +112,31 @@ isAfterString = do
 isAfterDelimitedElement :: Parser Bool
 isAfterDelimitedElement = do
   (==) <$> (Just <$> getPosition) <*> lift (stateLastDelimitedElementPos <$> TransState.get)
+
+-- | Get a list of characters that may not be be parsed as parts of inline
+-- elements. The list changes depending on the current context.
+getForbiddenCharacters :: Parser [Char]
+getForbiddenCharacters = lift (stateForbiddenCharacters <$> TransState.get)
+
+-- | Parse with @c@ not being allowed in inlines.
+withForbiddenCharacter :: Char -> Parser a -> Parser a
+withForbiddenCharacter c p =
+  pushForbiddenCharacter c *> p <* popForbiddenCharacter
+
+-- | Push charactor onto the list of characters disallowed in inline elements.
+pushForbiddenCharacter :: Char -> Parser ()
+pushForbiddenCharacter c = modifyLocalState
+  (\st -> st { stateForbiddenCharacters = c:stateForbiddenCharacters st })
+
+-- | Pop a character from the list of forbidden inline characters
+popForbiddenCharacter :: Parser ()
+popForbiddenCharacter = modifyLocalState
+  (\st -> st { stateForbiddenCharacters = drop 1 (stateForbiddenCharacters st)})
+
+
+--
+-- Space parsing
+--
 
 -- | Parses a space or tab.
 spaceChar :: Parser Char

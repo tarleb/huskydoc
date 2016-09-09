@@ -119,6 +119,10 @@ instance IsList Inlines where
   fromList = Inlines . Seq.fromList
   toList   = Foldable.toList . fromInlines
 
+instance Monoid Inlines where
+  mempty = Inlines mempty
+  (Inlines a) `mappend` (Inlines b) = Inlines (a <> b)
+
 -- | Block types
 data Block =
     HorizontalRule

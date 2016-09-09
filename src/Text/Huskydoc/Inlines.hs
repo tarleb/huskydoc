@@ -49,7 +49,7 @@ import Control.Monad ( guard, void )
 import Data.Maybe ( fromMaybe )
 import Data.List ( intercalate )
 import Data.Monoid ( (<>) )
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, singleton )
 import GHC.Exts ( IsList(..) )
 import Text.Huskydoc.Attributes
 import Text.Huskydoc.Parsing
@@ -115,6 +115,7 @@ inlinesBreak :: Parser ()
 inlinesBreak = try $ skipSpaces <* void eol
   <* notFollowedBy blankline
   <* notFollowedBy (some (oneOf ("-*"::String)) *> someSpaces) -- List item
+  <* notFollowedBy (string "|===") -- table delimiter
 
 -- | Parse a simple, markup-less string.
 str :: Parser InlineElement
@@ -174,7 +175,10 @@ schemas = ["https", "http", "ftp", "irc", "mailto"]
 
 -- | Parse a single special character.
 symbol :: Parser InlineElement
-symbol = Str . pack . (:[]) <$> oneOf markupDelimiterCharacters
+symbol = do
+  forbiddenChars <- getForbiddenCharacters
+  let allowedChars = filter (`notElem` forbiddenChars) markupDelimiterCharacters
+  Str . singleton <$> oneOf allowedChars
 
 specialCharacters :: String
 specialCharacters =
@@ -191,6 +195,7 @@ markupDelimiterCharacters =
   , '+'  -- continuation marker, part of hardbreaks
   , '['  -- beginning of attributes or link description
   , ']'  -- end of attributes or link description
+  , '|'  -- columns delimiter
   ]
 
 disallowedStrChars :: String

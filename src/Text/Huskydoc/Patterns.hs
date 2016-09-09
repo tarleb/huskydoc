@@ -53,6 +53,7 @@ module Text.Huskydoc.Patterns
   , pattern Space
   , pattern Str
   , pattern Strong
+  , stripInlines
   -- Rich inlines
   , pattern RichEmphasis
   , pattern RichHardBreak
@@ -66,6 +67,7 @@ module Text.Huskydoc.Patterns
   ) where
 
 import           Data.Maybe (fromMaybe)
+import           Data.Sequence ( Seq, ViewL (..), ViewR (..), viewl, viewr )
 import qualified Data.Sequence as Seq
 import           Text.Huskydoc.Types ( Attributes (..), RichElement (..)
                                      , Document (..), MetaData (..)
@@ -137,6 +139,25 @@ pattern Str txt <- RichElement _ (Internal.Str txt)
 -- | Plain elements
 pattern Strong inlns <- RichElement _ (Internal.Strong inlns)
   where Strong = plainElement . Internal.Strong
+
+-- | Strip leading and trainling whitespace from inlines
+stripInlines :: Inlines -> Inlines
+stripInlines = Inlines . trimInlinesLeft . trimInlinesRight . fromInlines
+  where
+    trimInlinesLeft :: Seq InlineElement -> Seq InlineElement
+    trimInlinesLeft inlns = case viewl inlns of
+      Space :< is     -> trimInlinesLeft is
+      HardBreak :< is -> trimInlinesLeft is
+      SoftBreak :< is -> trimInlinesLeft is
+      _               -> inlns
+
+    trimInlinesRight :: Seq InlineElement -> Seq InlineElement
+    trimInlinesRight inlns = case viewr inlns of
+      is :> Space     -> trimInlinesRight is
+      is :> HardBreak -> trimInlinesRight is
+      is :> SoftBreak -> trimInlinesRight is
+      _               -> inlns
+
 
 
 --
