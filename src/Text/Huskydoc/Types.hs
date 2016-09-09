@@ -106,6 +106,7 @@ data Inline =
   | Space
   | Str Text
   | Strong Inlines
+  | Superscript Inlines
   deriving (Show, Eq, Ord)
 
 type InlineElement = RichElement Inline

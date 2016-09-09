@@ -109,9 +109,12 @@ spec = do
     it "treats umlaut characters as alpha-numeric" $
       parseDef (emphasis *> str) `shouldFailOn` "_nope_ä"
 
-    -- describe "quoted text parser" $ do
-    --  it "accepts preceding attributes" $
-    --    parseDef (quotedText '*') `shouldSucceedOn` "[small]*wins*"
+  describe "superscript parser" $ do
+    it "reads superscript" $
+      parseDef superscript "^super^" `shouldParse` (Superscript [Str "super"])
+    it "reads superscript even when enclosed by words" $
+      parseDef (str *> superscript <* str) "word^super^word" `shouldParse`
+        (Superscript [Str "super"])
 
   describe "nested inlines" $ do
     it "allows emphasis to be nested in strong text" $

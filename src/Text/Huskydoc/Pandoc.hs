@@ -83,4 +83,5 @@ convertInlineElement = \case
   (SoftBreak)      -> Pandoc.softbreak
   (Emphasis inlns) -> Pandoc.emph   . convertInlines $ inlns
   (Strong   inlns) -> Pandoc.strong . convertInlines $ inlns
+  (Superscript is) -> Pandoc.superscript . convertInlines $ is
   _                -> mempty

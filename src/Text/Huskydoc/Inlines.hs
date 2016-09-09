@@ -38,6 +38,7 @@ module Text.Huskydoc.Inlines
   , softbreak
   , str
   , strong
+  , superscript
   , symbol
   , whitespace
   -- helpers
@@ -74,6 +75,7 @@ data InlineParser =
   | StrParser
   | StrongParser
   | SymbolParser
+  | SuperscriptParser
   | WhitespaceParser
   deriving (Eq, Ord, Show)
 
@@ -86,6 +88,7 @@ inlineParsers =
   , (SoftBreakParser, softbreak)
   , (StrongParser, strong)
   , (EmphasisParser, emphasis)
+  , (SuperscriptParser, superscript)
   , (StrParser, str)
   , (SymbolParser, symbol)
   ]
@@ -129,32 +132,43 @@ strong = quotedText RichStrong '*'
 emphasis :: Parser InlineElement
 emphasis = quotedText RichEmphasis '_'
 
+-- | Parse text marked-up as superscript
+superscript :: Parser InlineElement
+superscript = unconstrainedQuotedText RichSuperscript (char '^')
+
 quotedText :: (Attributes -> Inlines -> InlineElement)
            -> Char
            -> Parser InlineElement
-quotedText bldr c = (doubleDelimitedMarkup c <|> singleDelimitedMarkup c)
+quotedText bldr c = (unconstrainedQuotedText bldr (try $ string [c,c])
+                     <|> constrainedQuotedText bldr (char c))
                     <* markEndOfDelimitedElement
-  where
-    singleDelimitedMarkup :: Char -> Parser InlineElement
-    singleDelimitedMarkup c' = try $ do
-      guard =<< notAfterString
-      attributes' <- optional attributes
-      char c'
-      notFollowedBy spaceChar
-      elements <- someTill inlineElement (try endChar)
-      return $ bldr (fromMaybe nullAttributes attributes') (fromList elements)
-      where
-        endChar = do
-          guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
-          char c'
-          notFollowedBy alphaNumChar <|> eof
 
-    doubleDelimitedMarkup :: Char -> Parser InlineElement
-    doubleDelimitedMarkup c' = try $ do
-      attributes' <- optional attributes
-      string [c',c']
-      elements <- someTill inlineElement (try $ string [c',c'])
-      return $ bldr (fromMaybe nullAttributes attributes') (fromList elements)
+-- | Parse a constrained quoted text, i.e. text that follows basic rules like
+-- the requirement to not be surrounded by words.
+constrainedQuotedText :: (Attributes -> Inlines -> InlineElement)
+                      -> Parser a
+                      -> Parser InlineElement
+constrainedQuotedText bldr delimiter = try $ do
+  guard =<< notAfterString
+  attribs <- optional attributes
+  delimiter
+  notFollowedBy spaceChar
+  elements <- someTill inlineElement endChar
+  return $ bldr (fromMaybe nullAttributes attribs) (fromList elements)
+  where
+    endChar = do
+      guard =<< ((||) <$> isAfterString <*> isAfterDelimitedElement)
+      delimiter
+      notFollowedBy alphaNumChar <|> eof
+
+unconstrainedQuotedText :: (Attributes -> Inlines -> InlineElement)
+                        -> Parser a
+                        -> Parser InlineElement
+unconstrainedQuotedText bldr delimiter = try $ do
+  attribs <- optional attributes
+  delimiter
+  elements <- someTill inlineElement delimiter
+  return $ bldr (fromMaybe nullAttributes attribs) (fromList elements)
 
 -- | Parse a links
 link :: Parser InlineElement
@@ -192,6 +206,7 @@ markupDelimiterCharacters :: String
 markupDelimiterCharacters =
   [ '*'  -- opening/closing character for strong
   , '_'  -- opening/closing character for emphasis
+  , '^'  -- opening/closing character for superscript
   , '+'  -- continuation marker, part of hardbreaks
   , '['  -- beginning of attributes or link description
   , ']'  -- end of attributes or link description

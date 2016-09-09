@@ -53,6 +53,7 @@ module Text.Huskydoc.Patterns
   , pattern Space
   , pattern Str
   , pattern Strong
+  , pattern Superscript
   , stripInlines
   -- Rich inlines
   , pattern RichEmphasis
@@ -62,6 +63,7 @@ module Text.Huskydoc.Patterns
   , pattern RichSpace
   , pattern RichStr
   , pattern RichStrong
+  , pattern RichSuperscript
   , sectionTitleWith
   , paragraphWith
   ) where
@@ -136,9 +138,13 @@ pattern Space <- RichElement _ Internal.Space
 pattern Str txt <- RichElement _ (Internal.Str txt)
   where Str = plainElement . Internal.Str
 
--- | Plain elements
+-- | Strong element
 pattern Strong inlns <- RichElement _ (Internal.Strong inlns)
   where Strong = plainElement . Internal.Strong
+
+-- | Superscript element
+pattern Superscript inlns <- RichElement _ (Internal.Superscript inlns)
+  where Superscript = plainElement . Internal.Superscript
 
 -- | Strip leading and trainling whitespace from inlines
 stripInlines :: Inlines -> Inlines
@@ -185,6 +191,9 @@ pattern RichStr attr txt = RichElement attr (Internal.Str txt)
 
 -- | Strong text with attributes
 pattern RichStrong attr inlns = RichElement attr (Internal.Strong inlns)
+
+-- | Superscript text with attributes
+pattern RichSuperscript attr inlns = RichElement attr (Internal.Superscript inlns)
 
 --
 -- Plain block elements
