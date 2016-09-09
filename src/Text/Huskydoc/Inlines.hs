@@ -38,6 +38,7 @@ module Text.Huskydoc.Inlines
   , softbreak
   , str
   , strong
+  , subscript
   , superscript
   , symbol
   , whitespace
@@ -75,6 +76,7 @@ data InlineParser =
   | StrParser
   | StrongParser
   | SymbolParser
+  | SubscriptParser
   | SuperscriptParser
   | WhitespaceParser
   deriving (Eq, Ord, Show)
@@ -88,6 +90,7 @@ inlineParsers =
   , (SoftBreakParser, softbreak)
   , (StrongParser, strong)
   , (EmphasisParser, emphasis)
+  , (SubscriptParser, subscript)
   , (SuperscriptParser, superscript)
   , (StrParser, str)
   , (SymbolParser, symbol)
@@ -135,6 +138,10 @@ emphasis = quotedText RichEmphasis '_'
 -- | Parse text marked-up as superscript
 superscript :: Parser InlineElement
 superscript = unconstrainedQuotedText RichSuperscript (char '^')
+
+-- | Parse text marked-up as subscript
+subscript :: Parser InlineElement
+subscript = unconstrainedQuotedText RichSubscript (char '~')
 
 quotedText :: (Attributes -> Inlines -> InlineElement)
            -> Char
@@ -207,6 +214,7 @@ markupDelimiterCharacters =
   [ '*'  -- opening/closing character for strong
   , '_'  -- opening/closing character for emphasis
   , '^'  -- opening/closing character for superscript
+  , '~'  -- opening/closing character for subscript
   , '+'  -- continuation marker, part of hardbreaks
   , '['  -- beginning of attributes or link description
   , ']'  -- end of attributes or link description

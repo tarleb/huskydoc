@@ -53,6 +53,7 @@ module Text.Huskydoc.Patterns
   , pattern Space
   , pattern Str
   , pattern Strong
+  , pattern Subscript
   , pattern Superscript
   , stripInlines
   -- Rich inlines
@@ -63,6 +64,7 @@ module Text.Huskydoc.Patterns
   , pattern RichSpace
   , pattern RichStr
   , pattern RichStrong
+  , pattern RichSubscript
   , pattern RichSuperscript
   , sectionTitleWith
   , paragraphWith
@@ -142,6 +144,10 @@ pattern Str txt <- RichElement _ (Internal.Str txt)
 pattern Strong inlns <- RichElement _ (Internal.Strong inlns)
   where Strong = plainElement . Internal.Strong
 
+-- | Subscript element
+pattern Subscript inlns <- RichElement _ (Internal.Subscript inlns)
+  where Subscript = plainElement . Internal.Subscript
+
 -- | Superscript element
 pattern Superscript inlns <- RichElement _ (Internal.Superscript inlns)
   where Superscript = plainElement . Internal.Superscript
@@ -191,6 +197,9 @@ pattern RichStr attr txt = RichElement attr (Internal.Str txt)
 
 -- | Strong text with attributes
 pattern RichStrong attr inlns = RichElement attr (Internal.Strong inlns)
+
+-- | Subscript text with attributes
+pattern RichSubscript attr inlns = RichElement attr (Internal.Subscript inlns)
 
 -- | Superscript text with attributes
 pattern RichSuperscript attr inlns = RichElement attr (Internal.Superscript inlns)

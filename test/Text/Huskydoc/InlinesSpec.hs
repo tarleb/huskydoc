@@ -116,6 +116,13 @@ spec = do
       parseDef (str *> superscript <* str) "word^super^word" `shouldParse`
         (Superscript [Str "super"])
 
+  describe "subscript parser" $ do
+    it "reads subscript" $
+      parseDef subscript "~sub~" `shouldParse` (Subscript [Str "sub"])
+    it "reads subscript even when enclosed by words" $
+      parseDef (str *> subscript <* str) "word~sub~word" `shouldParse`
+        (Subscript [Str "sub"])
+
   describe "nested inlines" $ do
     it "allows emphasis to be nested in strong text" $
       parseDef strong "*__nested__*" `shouldParse`

@@ -106,6 +106,7 @@ data Inline =
   | Space
   | Str Text
   | Strong Inlines
+  | Subscript Inlines
   | Superscript Inlines
   deriving (Show, Eq, Ord)
 
