@@ -123,6 +123,7 @@ softbreak = SoftBreak <$ try inlinesBreak
 inlinesBreak :: Parser ()
 inlinesBreak = try $ skipSpaces <* void eol
   <* notFollowedBy blankline
+  <* notFollowedBy (char '+' *> eol) -- list continuation
   <* notFollowedBy (some (oneOf ("-*"::String)) *> someSpaces) -- List item
   <* notFollowedBy (string "|===") -- table delimiter
 

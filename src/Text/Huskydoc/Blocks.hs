@@ -88,6 +88,9 @@ horizontalRule = label "horizontal rule" $
 -- Lists
 --
 
+listBlock :: Parser (Attributes -> BlockElement)
+listBlock = bulletList
+
 -- | Parse a bullet list
 bulletList :: Parser (Attributes -> BlockElement)
 bulletList = label "bullet list" . try $ do
@@ -97,14 +100,6 @@ bulletList = label "bullet list" . try $ do
     -- First item is parsed without a marker, it has been read already
     firstItem <- listItem mempty
     flip RichBulletList . (firstItem:) <$> many (listItem marker)
-
--- | Parse a list element marked by @marker@
-listItem:: String -> Parser ListItem
-listItem marker = label "list item" $ try $
-  skipMany blankline
-  *> string marker
-  *> someSpaces
-  *> (ListItem <$> blocks)
 
 -- | Parse the start marker of a list item
 bulletListItemMarker :: Parser String
@@ -117,6 +112,27 @@ bulletListItemMarker = label "bullet-list item marker" . try $ do
 bulletListMarkerChars :: String
 bulletListMarkerChars = "-*"
 
+-- | Parse a list element marked by @marker@
+listItem :: String -> Parser ListItem
+listItem marker = label "list item" $ try $
+  skipMany blankline
+  *> string marker
+  *> someSpaces
+  *> (ListItem <$> listItemBlocks)
+
+listItemBlocks :: Parser Blocks
+listItemBlocks = label "list item blocks" . try $
+  fromList <$> ((:) <$> (blockElement <* optional eol)
+                    <*> many (continuationBlock <|>
+                              (listBlock <*> pure nullAttributes)))
+
+continuationBlock :: Parser BlockElement
+continuationBlock = label "continuation block" . try $
+  listContinuation *> blockElement <* optional eol
+
+listContinuation :: Parser ()
+listContinuation = label "list continuation" . try . void $
+  char '+' <* eol
 
 --
 -- Section titles

@@ -86,10 +86,14 @@ spec = do
       parseDef (attribless sectionTitle) `shouldFailOn `"Level0\n====\n"
       parseDef (attribless sectionTitle) `shouldFailOn `"Level0\n========\n"
 
-  describe "bulletListItem parser" $ do
+  describe "listItem parser" $ do
     it "parses a bullet list item" $ do
       parseDef (listItem "**") "** one" `shouldParse`
         ListItem [Paragraph [Str "one"]]
+    it "parses a bullet list item with continuation" $ do
+      parseDef (listItem "*") "* first:\n+\nnext one\n\n" `shouldParse`
+        ListItem [ Paragraph [Str "first:"]
+                 , Paragraph [Str "next", Space, Str "one"]]
 
   describe "bulletList parser" $ do
     it "parses a single element bullet list" $ do
@@ -107,6 +111,14 @@ spec = do
                               , BulletList [ ListItem [Paragraph [Str "1a"]]]
                               ]
                    , ListItem [Paragraph [Str "two", SoftBreak]]
+                   ]
+
+    it "parses a bullet list with continuations" $ do
+      parseDef (attribless bulletList) "* Image:\n+\nimage:sunset.jpg[]\n\n* End" `shouldParse`
+        BulletList [ ListItem [ Paragraph [Str "Image:"]
+                              , Paragraph [Image "sunset.jpg"]
+                              ]
+                   , ListItem [ Paragraph [Str "End"] ]
                    ]
 
   describe "tableCell parser" $ do
