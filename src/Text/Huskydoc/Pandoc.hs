@@ -54,15 +54,16 @@ convertBlockElement = \case
   (HorizontalRule)         -> Pandoc.horizontalRule
   (Paragraph inlns)        -> Pandoc.para (convertInlines inlns)
   (SectionTitle lvl inlns) -> Pandoc.header lvl (convertInlines inlns)
-  (BulletList lst)         -> Pandoc.bulletList . concatMap convertListItem $ lst
+  (BulletList lst)         -> Pandoc.bulletList . map convertListItem $ lst
   (Table rows)             -> let pandocRows = map convertRows rows
                                   headers = map (const mempty) (head pandocRows)
                               in Pandoc.simpleTable headers pandocRows
   _                        -> mempty
 
 -- | Convert a list item to a list of pandoc blocks
-convertListItem :: ListItem -> [Pandoc.Blocks]
-convertListItem = map convertBlockElement . toList . fromBlocks . fromListItem
+convertListItem :: ListItem -> Pandoc.Blocks
+convertListItem =
+  mconcat . map convertBlockElement . toList . fromBlocks . fromListItem
 
 -- | Convert rows
 convertRows :: TableRow -> [Pandoc.Blocks]
