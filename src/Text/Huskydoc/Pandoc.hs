@@ -51,10 +51,11 @@ convertBlocks = foldr ((<>) . convertBlockElement) mempty . fromBlocks
 -- | Convert a single huskydoc block element into pandoc blocks
 convertBlockElement :: BlockElement -> Pandoc.Blocks
 convertBlockElement = \case
+  (BulletList lst)         -> Pandoc.bulletList . map convertListItem $ lst
   (HorizontalRule)         -> Pandoc.horizontalRule
+  (OrderedList lst)        -> Pandoc.orderedList . map convertListItem $ lst
   (Paragraph inlns)        -> Pandoc.para (convertInlines inlns)
   (SectionTitle lvl inlns) -> Pandoc.header lvl (convertInlines inlns)
-  (BulletList lst)         -> Pandoc.bulletList . map convertListItem $ lst
   (Table rows)             -> let pandocRows = map convertRows rows
                                   headers = map (const mempty) (head pandocRows)
                               in Pandoc.simpleTable headers pandocRows

@@ -29,8 +29,9 @@ module Text.Huskydoc.Blocks
   ( blockElement
   , blocks
   -- individual block parsers
-  , horizontalRule
   , bulletList
+  , horizontalRule
+  , orderedList
   , paragraph
   , sectionTitle
   , table
@@ -45,6 +46,7 @@ import Control.Applicative ( (<**>) )
 import Control.Monad ( guard, mzero, void )
 import Data.List ( findIndex )
 import Data.Maybe ( fromMaybe )
+import Data.Monoid ( (<>) )
 import GHC.Exts ( IsList(..) )
 import Text.Huskydoc.Attributes ( blockAttributes )
 import Text.Huskydoc.Inlines ( inlines, inlinesExcluding
@@ -88,13 +90,24 @@ horizontalRule = label "horizontal rule" $
 -- Lists
 --
 
+-- | Parse any kind of list block
 listBlock :: Parser (Attributes -> BlockElement)
-listBlock = bulletList
+listBlock = bulletList <|> orderedList <?> "any list block"
+
+-- | Parse an ordered list
+orderedList :: Parser (Attributes -> BlockElement)
+orderedList = label "ordered list" . try $ do
+  marker <- skipSpaces *> orderedListItemMarker
+  guard . not =<< isInContext (ListContextWithMarker marker)
+  withContext (ListContextWithMarker marker) $ do
+    -- First item is parsed without a marker, it has been read already
+    firstItem <- listItem mempty
+    flip RichOrderedList . (firstItem:) <$> many (listItem marker)
 
 -- | Parse a bullet list
 bulletList :: Parser (Attributes -> BlockElement)
 bulletList = label "bullet list" . try $ do
-  marker <- bulletListItemMarker
+  marker <- skipSpaces *> bulletListItemMarker
   guard . not =<< isInContext (ListContextWithMarker marker)
   withContext (ListContextWithMarker marker) $ do
     -- First item is parsed without a marker, it has been read already
@@ -108,14 +121,20 @@ bulletListItemMarker = label "bullet-list item marker" . try $ do
   rest <- many (char first)
   return (first : rest)
 
+-- | Parse the start marker of an ordered list item
+orderedListItemMarker :: Parser String
+orderedListItemMarker = label "ordered-list item marker" . try $
+  some (char '.')
+
 -- | Characters that can be used to mark a list item
 bulletListMarkerChars :: String
 bulletListMarkerChars = "-*"
 
 -- | Parse a list element marked by @marker@
 listItem :: String -> Parser ListItem
-listItem marker = label "list item" $ try $
+listItem marker = label ("list item with marker '" <> marker <> "'") . try $
   skipMany blankline
+  *> (if marker == "" then pure () else skipSpaces)
   *> string marker
   *> someSpaces
   *> (ListItem <$> listItemBlocks)

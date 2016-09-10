@@ -94,6 +94,9 @@ spec = do
       parseDef (listItem "*") "* first:\n+\nnext one\n\n" `shouldParse`
         ListItem [ Paragraph [Str "first:"]
                  , Paragraph [Str "next", Space, Str "one"]]
+    it "parses an indented list item" $ do
+      parseDef (listItem "-") "  - first" `shouldParse`
+        ListItem [ Paragraph [Str "first"]]
 
   describe "bulletList parser" $ do
     it "parses a single element bullet list" $ do
@@ -120,6 +123,18 @@ spec = do
                               ]
                    , ListItem [ Paragraph [Str "End"] ]
                    ]
+
+  describe "orderedList parser" $ do
+    it "parses a simple ordered list" $ do
+      parseDef (attribless orderedList) ". Lather, rinse.\n. Repeat.\n" `shouldParse`
+        OrderedList [ ListItem [Paragraph [Str "Lather,", Space, Str "rinse."]]
+                    , ListItem [Paragraph [Str "Repeat.", SoftBreak]]
+                    ]
+    it "parses an indented ordered list" $ do
+      parseDef (attribless orderedList) "  . Lather, rinse.\n  . Repeat.\n" `shouldParse`
+        OrderedList [ ListItem [Paragraph [Str "Lather,", Space, Str "rinse."]]
+                    , ListItem [Paragraph [Str "Repeat.", SoftBreak]]
+                    ]
 
   describe "tableCell parser" $ do
     it "parses a single table cell, ended by eol or another cell" $ do

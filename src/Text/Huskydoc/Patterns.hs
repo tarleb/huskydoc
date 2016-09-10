@@ -34,14 +34,16 @@ module Text.Huskydoc.Patterns
   -- Attributes
   , pattern EmptyAttributes
   -- Plain blocks
-  , pattern HorizontalRule
   , pattern BulletList
+  , pattern HorizontalRule
+  , pattern OrderedList
   , pattern Paragraph
   , pattern SectionTitle
   , pattern Table
   -- Rich blocks
-  , pattern RichHorizontalRule
   , pattern RichBulletList
+  , pattern RichHorizontalRule
+  , pattern RichOrderedList
   , pattern RichParagraph
   , pattern RichSectionTitle
   , pattern RichTable
@@ -216,13 +218,18 @@ pattern RichSuperscript attr inlns = RichElement attr (Internal.Superscript inln
 --
 -- Plain block elements
 --
+
+-- | Bullet list
+pattern BulletList es <- RichElement _ (Internal.BulletList es)
+  where BulletList = plainElement . Internal.BulletList
+
 -- | Horizontal rule element
 pattern HorizontalRule <- RichElement _ Internal.HorizontalRule
   where HorizontalRule = plainElement Internal.HorizontalRule
 
 -- | Bullet list
-pattern BulletList es <- RichElement _ (Internal.BulletList es)
-  where BulletList = plainElement . Internal.BulletList
+pattern OrderedList es <- RichElement _ (Internal.OrderedList es)
+  where OrderedList = plainElement . Internal.OrderedList
 
 -- | Paragraph element
 pattern Paragraph blks <- RichElement _ (Internal.Paragraph blks)
@@ -239,11 +246,14 @@ pattern Table rows <- RichElement _ (Internal.Table rows)
 -- Block elements with attributes ("Rich" block elements)
 --
 
+-- | Bullet (i.e. unordered) list with attributes
+pattern RichBulletList attr es = RichElement attr (Internal.BulletList es)
+
 -- | Horizontal rule element with attributes
 pattern RichHorizontalRule attr = RichElement attr Internal.HorizontalRule
 
 -- | Bullet (i.e. unordered) list with attributes
-pattern RichBulletList attr es = RichElement attr (Internal.BulletList es)
+pattern RichOrderedList attr es = RichElement attr (Internal.OrderedList es)
 
 -- | Paragraph element with attributes
 pattern RichParagraph attr blks = RichElement attr (Internal.Paragraph blks)

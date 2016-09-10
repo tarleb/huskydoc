@@ -124,7 +124,8 @@ inlinesBreak :: Parser ()
 inlinesBreak = try $ skipSpaces <* void eol
   <* notFollowedBy blankline
   <* notFollowedBy (char '+' *> eol) -- list continuation
-  <* notFollowedBy (some (oneOf ("-*"::String)) *> someSpaces) -- List item
+  <* notFollowedBy (skipSpaces *> some (oneOf ("-*"::String)) *> someSpaces) -- List item
+  <* notFollowedBy (skipSpaces *> some (char '.') *> someSpaces) -- Ordered-list item
   <* notFollowedBy (string "|===") -- table delimiter
 
 -- | Parse a simple, markup-less string.

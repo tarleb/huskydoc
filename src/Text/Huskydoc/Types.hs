@@ -128,10 +128,11 @@ instance Monoid Inlines where
 
 -- | Block types
 data Block =
-    HorizontalRule
+    BulletList [ListItem]
+  | HorizontalRule
+  | OrderedList [ListItem]
   | Paragraph Inlines
   | SectionTitle Int Inlines
-  | BulletList [ListItem]
   | Table [TableRow]
   deriving (Show, Eq, Ord)
 
