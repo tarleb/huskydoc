@@ -153,7 +153,7 @@ data TableCell = TableCell
 type BlockElement = RichElement Block
 
 -- | Elements of block-lists
-newtype ListItem = ListItem { fromListItem :: [BlockElement] }
+newtype ListItem = ListItem { fromListItem :: Blocks }
   deriving (Show, Eq, Ord)
 
 -- | Sequence of block elements, the basic components of documents

@@ -35,10 +35,10 @@ module Text.Huskydoc.Blocks
   , sectionTitle
   , table
   -- helpers and intermediary parsers
-  , withBlockAttributes
-  , bulletListItem
+  , listItem
   , tableCell
   , tableRow
+  , withBlockAttributes
   ) where
 
 import Control.Applicative ( (<**>) )
@@ -56,11 +56,11 @@ blocks :: Parser Blocks
 blocks = fromList <$> some blockElement
 
 blockElement :: Parser BlockElement
-blockElement =
+blockElement = label "block element" $
   many blankline
   *> (fromMaybe mempty <$> optional blockAttributes)
   <**> choice blockElementParsers
-  <?> "block element"
+  <* optional eol
 
 blockElementParsers :: [Parser (Attributes -> BlockElement)]
 blockElementParsers =
@@ -76,29 +76,39 @@ withBlockAttributes p = fromMaybe mempty <$> optional blockAttributes <**> p
 
 -- | Parse an horizontal rule
 horizontalRule :: Parser (Attributes -> BlockElement)
-horizontalRule = RichHorizontalRule <$ try (choice ruleParsers <* blankline)
+horizontalRule = label "horizontal rule" $
+  RichHorizontalRule <$ try (choice ruleParsers <* blankline)
   where
     ruleParsers :: [Parser String]
     ruleParsers = [ string "---" , string "- - -"
                   , string "***" , string "* * *"]
 
+
+--
+-- Lists
+--
+
 -- | Parse a bullet list
 bulletList :: Parser (Attributes -> BlockElement)
-bulletList = try $ do
+bulletList = label "bullet list" . try $ do
   marker <- bulletListItemMarker
-  firstItem <- bulletListItem ""
-  flip RichBulletList . (firstItem:) <$> many (bulletListItem marker)
+  guard . not =<< isInContext (ListContextWithMarker marker)
+  withContext (ListContextWithMarker marker) $ do
+    -- First item is parsed without a marker, it has been read already
+    firstItem <- listItem mempty
+    flip RichBulletList . (firstItem:) <$> many (listItem marker)
 
 -- | Parse a list element marked by @marker@
-bulletListItem :: String -> Parser ListItem
-bulletListItem marker = try $ do
-  string marker <* someSpaces
-  element <- blockElement <* optional eol
-  return . ListItem . (:[]) $ element
+listItem:: String -> Parser ListItem
+listItem marker = label "list item" $ try $
+  skipMany blankline
+  *> string marker
+  *> someSpaces
+  *> (ListItem <$> blocks)
 
 -- | Parse the start marker of a list item
 bulletListItemMarker :: Parser String
-bulletListItemMarker = try $ do
+bulletListItemMarker = label "bullet-list item marker" . try $ do
   first <- oneOf bulletListMarkerChars
   rest <- many (char first)
   return (first : rest)
@@ -107,6 +117,10 @@ bulletListItemMarker = try $ do
 bulletListMarkerChars :: String
 bulletListMarkerChars = "-*"
 
+
+--
+-- Section titles
+--
 
 -- | Parse a section title
 sectionTitle :: Parser (Attributes -> BlockElement)
@@ -157,11 +171,12 @@ titleUnderlineChars = "=-~^"
 
 -- | Parse a table
 table :: Parser (Attributes -> BlockElement)
-table = try $ do
-  flip RichTable <$> (tableBoundary *> some tableRow <* tableBoundary)
+table = try $ flip RichTable <$>
+  (tableBoundary *> some tableRow <* tableBoundary)
 
 tableBoundary :: Parser String
-tableBoundary = try $ string "|===" <* optional (many (char '=')) <* skipSpaces <* eol
+tableBoundary = try $
+  string "|===" <* optional (many (char '=')) <* skipSpaces <* eol
 
 -- | Parse a simple, single line, table row
 tableRow :: Parser TableRow
@@ -176,8 +191,8 @@ tableRow = try $ do
 tableCell :: Parser TableCell
 tableCell =
   let cellInlines = stripInlines . mconcat <$> try
-        (withForbiddenCharacter '|' $
-           some (inlinesExcluding [SoftBreakParser, HardBreakParser]))
+                    (withContext TableContext $
+                     some (inlinesExcluding [SoftBreakParser, HardBreakParser]))
   in (\inlns -> TableCell [Paragraph inlns]) <$> cellInlines
 
 -- | A simple paragraph

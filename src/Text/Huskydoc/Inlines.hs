@@ -211,9 +211,21 @@ schemas = ["https", "http", "ftp", "irc", "mailto"]
 -- | Parse a single special character.
 symbol :: Parser InlineElement
 symbol = do
-  forbiddenChars <- getForbiddenCharacters
-  let allowedChars = filter (`notElem` forbiddenChars) markupDelimiterCharacters
+  forbiddenChars' <- forbiddenChars
+  let allowedChars = filter (`notElem` forbiddenChars') markupDelimiterCharacters
   Str . singleton <$> oneOf allowedChars
+
+-- | Get a list of characters that may not be be parsed as parts of inline
+-- elements. The list changes depending on the current context.
+forbiddenChars :: Parser String
+forbiddenChars = foldr addCharsForbiddenInContext [] <$> getParserContexts
+  where
+    addCharsForbiddenInContext :: ParserContext -> [Char] -> [Char]
+    addCharsForbiddenInContext ctx cs =
+      case ctx of
+        TableContext -> '|':cs
+        ListContextWithMarker (x:_) -> x:cs
+        _            -> cs
 
 specialCharacters :: String
 specialCharacters =

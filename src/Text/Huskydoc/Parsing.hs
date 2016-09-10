@@ -27,12 +27,15 @@ Portability :  portable
 Tests for the Parsing module.
 -}
 module Text.Huskydoc.Parsing
-  ( ParserState (..)
-  , HuskydocError
+  ( HuskydocError
+  , Parser
+  , ParserContext (..)
+  , ParserState (..)
   , blankline
-  , getForbiddenCharacters
+  , getParserContexts
   , isAfterString
   , isAfterDelimitedElement
+  , isInContext
   , markEndOfStr
   , markEndOfDelimitedElement
   , notAfterString
@@ -41,9 +44,8 @@ module Text.Huskydoc.Parsing
   , someSpaces
   , spaceChar
   , withColumnCount
-  , withForbiddenCharacter
+  , withContext
   -- Re-export Megaparsec types
-  , Parser
   , module Text.Megaparsec
   ) where
 
@@ -64,20 +66,41 @@ type HuskydocError = ParseError
 
 -- | Parser state
 data ParserState = ParserState
-  { stateForbiddenCharacters :: [Char]   -- ^ List of chars currently not
-                                         -- allowed in inlines
-  , stateLastStrPos :: Maybe SourcePos -- ^ End position of the last Str
+  { stateLastStrPos :: Maybe SourcePos -- ^ End position of the last Str
   , stateLastDelimitedElementPos :: Maybe SourcePos -- ^ End of the last
                                                     -- element delimited by
                                                     -- markup characters
+  , stateParserContexts :: [ParserContext] -- ^ Current parsing context; contexts
+                                           -- entered first are listed last.
   }
 
 instance Default ParserState where
   def = ParserState
-        { stateForbiddenCharacters = []
-        , stateLastStrPos = Nothing
+        { stateLastStrPos = Nothing
         , stateLastDelimitedElementPos = Nothing
+        , stateParserContexts = []
         }
+
+-- | Contexts the parser can be in.
+data ParserContext =
+    TableContext
+  | ListContextWithMarker String
+  deriving (Eq, Ord, Show)
+
+-- | Parse in the given context
+withContext :: ParserContext -> Parser a -> Parser a
+withContext ctx p = do
+  modifyLocalState (\st -> st { stateParserContexts = ctx:stateParserContexts st})
+  res <- p
+  modifyLocalState (\st -> st { stateParserContexts = drop 1 $ stateParserContexts st})
+  return res
+
+-- | Get the list of current parser contexts
+getParserContexts :: Parser [ParserContext]
+getParserContexts = lift $ stateParserContexts <$> TransState.get
+
+isInContext :: ParserContext -> Parser Bool
+isInContext ctx = (ctx `elem`) <$> getParserContexts
 
 -- | Helper function to test parsers.  This sets the source name to the empty
 --   string and uses the default parser state.
@@ -112,26 +135,6 @@ isAfterString = do
 isAfterDelimitedElement :: Parser Bool
 isAfterDelimitedElement = do
   (==) <$> (Just <$> getPosition) <*> lift (stateLastDelimitedElementPos <$> TransState.get)
-
--- | Get a list of characters that may not be be parsed as parts of inline
--- elements. The list changes depending on the current context.
-getForbiddenCharacters :: Parser [Char]
-getForbiddenCharacters = lift (stateForbiddenCharacters <$> TransState.get)
-
--- | Parse with @c@ not being allowed in inlines.
-withForbiddenCharacter :: Char -> Parser a -> Parser a
-withForbiddenCharacter c p =
-  pushForbiddenCharacter c *> p <* popForbiddenCharacter
-
--- | Push charactor onto the list of characters disallowed in inline elements.
-pushForbiddenCharacter :: Char -> Parser ()
-pushForbiddenCharacter c = modifyLocalState
-  (\st -> st { stateForbiddenCharacters = c:stateForbiddenCharacters st })
-
--- | Pop a character from the list of forbidden inline characters
-popForbiddenCharacter :: Parser ()
-popForbiddenCharacter = modifyLocalState
-  (\st -> st { stateForbiddenCharacters = drop 1 (stateForbiddenCharacters st)})
 
 
 --

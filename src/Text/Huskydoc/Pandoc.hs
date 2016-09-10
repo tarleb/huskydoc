@@ -35,6 +35,7 @@ import           Prelude hiding (foldr)
 import           Data.Foldable (foldr)
 import           Data.Monoid ((<>))
 import           Data.Text (unpack)
+import           GHC.Exts ( IsList (..) )
 import           Text.Huskydoc.Patterns
 import qualified Text.Pandoc.Builder as Pandoc
 import           Text.Pandoc.Definition (Pandoc)
@@ -61,7 +62,7 @@ convertBlockElement = \case
 
 -- | Convert a list item to a list of pandoc blocks
 convertListItem :: ListItem -> [Pandoc.Blocks]
-convertListItem = map convertBlockElement . fromListItem
+convertListItem = map convertBlockElement . toList . fromBlocks . fromListItem
 
 -- | Convert rows
 convertRows :: TableRow -> [Pandoc.Blocks]

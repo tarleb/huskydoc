@@ -88,13 +88,24 @@ spec = do
 
   describe "bulletListItem parser" $ do
     it "parses a bullet list item" $ do
-      parseDef (bulletListItem "**") "** one" `shouldParse`
+      parseDef (listItem "**") "** one" `shouldParse`
         ListItem [Paragraph [Str "one"]]
 
   describe "bulletList parser" $ do
-    it "parses an bullet list" $ do
-      parseDef (attribless bulletList) "** one\n** two\n" `shouldParse`
+    it "parses a single element bullet list" $ do
+      parseDef (attribless bulletList) "* one\n" `shouldParse`
+        BulletList [ ListItem [Paragraph [Str "one", SoftBreak]]]
+    it "parses a bullet list" $ do
+      parseDef (attribless bulletList) "** one\n** two\n** three\n" `shouldParse`
         BulletList [ ListItem [Paragraph [Str "one"]]
+                   , ListItem [Paragraph [Str "two"]]
+                   , ListItem [Paragraph [Str "three", SoftBreak]]
+                   ]
+    it "parses a nested bullet list" $ do
+      parseDef (attribless bulletList) "** one\n* 1a\n** two\n" `shouldParse`
+        BulletList [ ListItem [ Paragraph [Str "one"]
+                              , BulletList [ ListItem [Paragraph [Str "1a"]]]
+                              ]
                    , ListItem [Paragraph [Str "two", SoftBreak]]
                    ]
 
