@@ -84,6 +84,7 @@ convertInlineElement = \case
   (Emphasis inlns)    -> Pandoc.emph   . convertInlines $ inlns
   (HardBreak)         -> Pandoc.linebreak
   (Image src)         -> Pandoc.image (unpack src) mempty mempty
+  (Link ref desc)     -> Pandoc.link (unpack ref) mempty (convertInlines desc)
   (Monospaced inlns)  -> Pandoc.code . unpack . extractText $ inlns
   (SoftBreak)         -> Pandoc.softbreak
   (Space)             -> Pandoc.space

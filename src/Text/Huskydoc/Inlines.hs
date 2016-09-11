@@ -78,6 +78,7 @@ data InlineParser =
     EmphasisParser
   | HardBreakParser
   | ImageParser
+  | LinkParser
   | MonoSpacedParser
   | SoftBreakParser
   | StrParser
@@ -100,6 +101,7 @@ inlineParsers =
   , (MonoSpacedParser, monospaced)
   , (SubscriptParser, subscript)
   , (SuperscriptParser, superscript)
+  , (LinkParser, link)
   , (ImageParser, image)
   , (StrParser, str)
   , (SymbolParser, symbol)
