@@ -66,7 +66,7 @@ blockElement = label "block element" $
 
 blockElementParsers :: [Parser (Attributes -> BlockElement)]
 blockElementParsers =
-  [ bulletList
+  [ list
   , horizontalRule
   , sectionTitle
   , table
@@ -91,8 +91,8 @@ horizontalRule = label "horizontal rule" $
 --
 
 -- | Parse any kind of list block
-listBlock :: Parser (Attributes -> BlockElement)
-listBlock = bulletList <|> orderedList <?> "any list block"
+list :: Parser (Attributes -> BlockElement)
+list = bulletList <|> orderedList <?> "any list block"
 
 -- | Parse an ordered list
 orderedList :: Parser (Attributes -> BlockElement)
@@ -141,9 +141,9 @@ listItem marker = label ("list item with marker '" <> marker <> "'") . try $
 
 listItemBlocks :: Parser Blocks
 listItemBlocks = label "list item blocks" . try $
-  fromList <$> ((:) <$> (blockElement <* optional eol)
+  fromList <$> ((:) <$> (paragraph <*> pure nullAttributes <* optional eol)
                     <*> many (continuationBlock <|>
-                              (listBlock <*> pure nullAttributes)))
+                              (list <*> pure nullAttributes)))
 
 continuationBlock :: Parser BlockElement
 continuationBlock = label "continuation block" . try $
