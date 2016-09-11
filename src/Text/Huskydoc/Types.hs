@@ -39,6 +39,7 @@ module Text.Huskydoc.Types
   , ListItem (..)
   , MetaData (..)
   , RichElement (..)
+  , SourceLine (..)
   , TableRow (..)
   , TableCell (..)
   , nullAttributes
@@ -134,8 +135,13 @@ data Block =
   | OrderedList [ListItem]
   | Paragraph Inlines
   | SectionTitle Int Inlines
+  | Source [SourceLine]
   | Table [TableRow]
   deriving (Show, Eq, Ord)
+
+-- | Source block line
+newtype SourceLine = SourceLine { fromSourceLine :: Text }
+  deriving (Eq, Ord, Show)
 
 -- | Table row
 newtype TableRow = TableRow { fromTableRow :: [TableCell] }

@@ -24,7 +24,7 @@ Maintainer  :  Albert Krewinkel <tarleb@zeitkraut.de>
 Stability   :  experimental
 Portability :  portable
 
-Huskydoc element types
+Converters from huskydoc to pandoc types
 -}
 module Text.Huskydoc.Pandoc
   ( convertDocument
@@ -57,6 +57,8 @@ convertBlockElement = \case
   (OrderedList lst)        -> Pandoc.orderedList . map convertListItem $ lst
   (Paragraph inlns)        -> Pandoc.para (convertInlines inlns)
   (SectionTitle lvl inlns) -> Pandoc.header lvl (convertInlines inlns)
+  (RichSource _ srcLines)  -> let toText = unpack . (<> "\n") . fromSourceLine
+                              in Pandoc.codeBlock . concatMap toText $ srcLines
   (Table rows)             -> let pandocRows = map convertRows rows
                                   headers = map (const mempty) (head pandocRows)
                               in Pandoc.simpleTable headers pandocRows

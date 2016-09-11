@@ -46,6 +46,7 @@ module Text.Huskydoc.Patterns
   , pattern RichOrderedList
   , pattern RichParagraph
   , pattern RichSectionTitle
+  , pattern RichSource
   , pattern RichTable
   -- Inlines
   , pattern Emphasis
@@ -83,7 +84,7 @@ import           Text.Huskydoc.Types ( Attributes (..), RichElement (..)
                                      , Document (..), MetaData (..)
                                      , BlockElement, Blocks (..)
                                      , InlineElement, Inlines (..)
-                                     , ListItem (..)
+                                     , ListItem (..), SourceLine (..)
                                      , TableRow (..), TableCell (..)
                                      , plainElement , nullAttributes
                                      )
@@ -269,6 +270,9 @@ pattern RichParagraph attr blks = RichElement attr (Internal.Paragraph blks)
 
 -- | Section title element with attributes
 pattern RichSectionTitle attr lvl blks = RichElement attr (Internal.SectionTitle lvl blks)
+
+-- | Source block element with attributes
+pattern RichSource attr srcLines = RichElement attr (Internal.Source srcLines)
 
 -- | Table with attributes
 pattern RichTable attr rows = RichElement attr (Internal.Table rows)

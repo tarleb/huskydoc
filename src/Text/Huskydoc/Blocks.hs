@@ -34,6 +34,7 @@ module Text.Huskydoc.Blocks
   , orderedList
   , paragraph
   , sectionTitle
+  , source
   , table
   -- helpers and intermediary parsers
   , listItem
@@ -47,6 +48,7 @@ import Control.Monad ( guard, mzero, void )
 import Data.List ( findIndex )
 import Data.Maybe ( fromMaybe )
 import Data.Monoid ( (<>) )
+import Data.Text ( pack )
 import GHC.Exts ( IsList(..) )
 import Text.Huskydoc.Attributes ( blockAttributes )
 import Text.Huskydoc.Inlines ( inlines, inlinesExcluding
@@ -69,6 +71,7 @@ blockElementParsers =
   [ list
   , horizontalRule
   , sectionTitle
+  , source
   , table
   , paragraph
   ]
@@ -203,6 +206,27 @@ levelFromLineChar c =
 -- of the underlined header.
 titleUnderlineChars :: String
 titleUnderlineChars = "=-~^"
+
+
+--
+-- Delimited blocks
+--
+
+source :: Parser (Attributes -> BlockElement)
+source = label "source block" . try $ do
+  delim <- (++) <$> string "----" <*> many (char '-')
+  skipSpaces <* void eol
+  sourceLines <- manyTill sourceBlockLine (string delim *> skipSpaces *> void eol)
+  return $ flip RichSource sourceLines
+
+sourceBlockLine :: Parser SourceLine
+sourceBlockLine = label "source line" . try $ do
+  SourceLine . pack <$> manyTill anyChar eol
+
+
+--
+-- Tables
+--
 
 -- | Parse a table
 table :: Parser (Attributes -> BlockElement)
