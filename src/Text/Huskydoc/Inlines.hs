@@ -36,6 +36,9 @@ module Text.Huskydoc.Inlines
   , hardbreak
   , image
   , link
+  , monospaced
+  , monospacedInlines
+  , monospacedPassThrough
   , softbreak
   , str
   , strong
@@ -49,6 +52,7 @@ module Text.Huskydoc.Inlines
   ) where
 
 import Control.Monad ( guard, void )
+import Data.Char ( isSpace )
 import Data.Maybe ( fromMaybe )
 import Data.List ( intercalate )
 import Data.Monoid ( (<>) )
@@ -74,6 +78,7 @@ data InlineParser =
     EmphasisParser
   | HardBreakParser
   | ImageParser
+  | MonoSpacedParser
   | SoftBreakParser
   | StrParser
   | StrongParser
@@ -92,6 +97,7 @@ inlineParsers =
   , (SoftBreakParser, softbreak)
   , (StrongParser, strong)
   , (EmphasisParser, emphasis)
+  , (MonoSpacedParser, monospaced)
   , (SubscriptParser, subscript)
   , (SuperscriptParser, superscript)
   , (ImageParser, image)
@@ -127,6 +133,38 @@ inlinesBreak = try $ skipSpaces <* void eol
   <* notFollowedBy (skipSpaces *> some (oneOf ("-*"::String)) *> someSpaces) -- List item
   <* notFollowedBy (skipSpaces *> some (char '.') *> someSpaces) -- Ordered-list item
   <* notFollowedBy (string "|===") -- table delimiter
+
+-- | Parse monospaced text
+monospaced :: Parser InlineElement
+monospaced = label "monospaced element" $
+  monospacedPassThrough <|> monospacedInlines
+
+monospacedInlines :: Parser InlineElement
+monospacedInlines = label "monospaced inlines" . try $
+  quotedText RichMonospaced '+'
+
+monospacedPassThrough :: Parser InlineElement
+monospacedPassThrough = label "monospaced pass-through" $
+  monospacedUnconstrainedPassThrough <|> monospacedConstrainedPassThrough
+
+monospacedUnconstrainedPassThrough :: Parser InlineElement
+monospacedUnconstrainedPassThrough = label "monospaced unconstrained" . try $
+  let attribs = fromMaybe nullAttributes <$> optional attributes
+      txt = pack <$> (string "``" *> someTill anyChar (string "``"))
+  in RichMonospaced <$> attribs <*> (fromList . (:[]) . Str <$> txt)
+
+monospacedConstrainedPassThrough :: Parser InlineElement
+monospacedConstrainedPassThrough =
+  label "constrained monospaced pass-through" $ try $ do
+  guard =<< notAfterString
+  attribs <- fromMaybe nullAttributes <$> optional attributes
+  char '`'
+  notFollowedBy spaceChar
+  txt <- pack <$> someTill constrainedChar end
+  return $ RichMonospaced attribs (fromList [Str txt])
+  where end = char '`' *> notFollowedBy alphaNumChar <|> eof
+        constrainedChar = (satisfy (not . isSpace))
+                          <|> (try $ satisfy isSpace <* notFollowedBy (char '`'))
 
 -- | Parse a simple, markup-less string.
 str :: Parser InlineElement
@@ -237,16 +275,18 @@ specialCharacters =
   , '\n' -- line breaks (hardbreak, softbreak)
   ]
 
+-- | Markup relevant characters in ASCII order
 markupDelimiterCharacters :: String
 markupDelimiterCharacters =
   [ '*'  -- opening/closing character for strong
-  , '_'  -- opening/closing character for emphasis
-  , '^'  -- opening/closing character for superscript
-  , '~'  -- opening/closing character for subscript
   , '+'  -- continuation marker, part of hardbreaks
   , '['  -- beginning of attributes or link description
   , ']'  -- end of attributes or link description
+  , '^'  -- opening/closing character for superscript
+  , '_'  -- opening/closing character for emphasis
+  , '`'  -- opening/closing character for monospaced
   , '|'  -- columns delimiter
+  , '~'  -- opening/closing character for subscript
   ]
 
 disallowedStrChars :: String

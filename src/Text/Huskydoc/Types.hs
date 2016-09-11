@@ -103,6 +103,7 @@ data Inline =
   | Image Text
   | LineBreak
   | Link Text Inlines
+  | Monospaced Inlines
   | SoftBreak
   | Space
   | Str Text

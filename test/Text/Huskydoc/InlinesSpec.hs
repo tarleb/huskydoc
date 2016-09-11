@@ -148,6 +148,18 @@ spec = do
       parseDef image "image:sunset.jpg[]" `shouldParse`
         Image "sunset.jpg"
 
+  describe "monospaced pass-through parser" $ do
+    it "parses monospaced pass-through text" $ do
+      parseDef monospacedPassThrough "`mono`" `shouldParse`
+        Monospaced [Str "mono"]
+    it "fails if the unconstrained marked is preceded by whitespace" $ do
+      parseDef monospacedPassThrough `shouldFailOn` "`nope `"
+
+  describe "monospaced inlines parser" $ do
+    it "parses inlines marked as monospaced" $ do
+      parseDef monospacedInlines "+*mono*+" `shouldParse`
+        Monospaced [Strong [Str "mono"]]
+
   describe "url parser" $ do
     it "parses a simple url without a path" $ do
       parseDef url "http://pandoc.org" `shouldParse` "http://pandoc.org"

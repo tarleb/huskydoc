@@ -52,6 +52,7 @@ module Text.Huskydoc.Patterns
   , pattern HardBreak
   , pattern Image
   , pattern Link
+  , pattern Monospaced
   , pattern SoftBreak
   , pattern Space
   , pattern Str
@@ -64,6 +65,7 @@ module Text.Huskydoc.Patterns
   , pattern RichHardBreak
   , pattern RichImage
   , pattern RichLink
+  , pattern RichMonospaced
   , pattern RichSoftBreak
   , pattern RichSpace
   , pattern RichStr
@@ -136,6 +138,10 @@ pattern Image src <- RichElement _ (Internal.Image src)
 pattern Link ref desc <- RichElement _ (Internal.Link ref desc)
   where Link ref desc = plainElement $ Internal.Link ref desc
 
+-- | Monospaced element with target location and descriptions
+pattern Monospaced inlns <- RichElement _ (Internal.Monospaced inlns)
+  where Monospaced inlns = plainElement $ Internal.Monospaced inlns
+
 -- | Soft linebreak element
 pattern SoftBreak <- RichElement _ Internal.SoftBreak
   where SoftBreak = plainElement Internal.SoftBreak
@@ -196,6 +202,9 @@ pattern RichImage attrs src = RichElement attrs (Internal.Image src)
 
 -- | Link element with target location, descriptions and attributes
 pattern RichLink attr ref desc <- RichElement attr (Internal.Link ref desc)
+
+-- | Monospaced text with attributes
+pattern RichMonospaced attr inlns = RichElement attr (Internal.Monospaced inlns)
 
 -- | Soft linebreak element with attributes
 pattern RichSoftBreak attrs = RichElement attrs Internal.SoftBreak
