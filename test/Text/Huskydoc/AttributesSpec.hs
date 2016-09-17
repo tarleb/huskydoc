@@ -57,21 +57,35 @@ spec = do
   describe "attributes" $ do
     it "parses a single positional attribute" $ do
       parseDef attributes "[verse]"
-        `shouldParse` (toAttributes [PositionalAttr "verse"])
+        `shouldParse` (toAttributes [Attr "style" "verse"])
     it "parses a single named attribute" $ do
       parseDef attributes "[role=\"verse\"]"
-        `shouldParse` (toAttributes [NamedAttr "role" "verse"])
+        `shouldParse` (toAttributes [Attr "role" "verse"])
     it "parses a many comma-separated positional attributes" $ do
       parseDef attributes "[verse,rick, roll ]" `shouldParse`
-        (toAttributes
+        (fromRawAttrs
          [ PositionalAttr "verse"
          , PositionalAttr "rick"
          , PositionalAttr "roll"
          ])
     it "parses a many comma-separated named attributes" $ do
       parseDef attributes "[quality=\"medium\", summer=\"hot\", drinks=\"cool\"]"
-        `shouldParse` (toAttributes
+        `shouldParse` (fromRawAttrs
            [ NamedAttr "quality" "medium"
            , NamedAttr "summer" "hot"
            , NamedAttr "drinks" "cool"
            ])
+
+  describe "positionalToAttr" $ do
+    it "converts verse positional attributes to normal attributes" $ do
+      positionalsToAttrs [PositionalAttr "verse", PositionalAttr "Anonymous"]
+        `shouldBe` [Attr "style" "verse", Attr "attribution" "Anonymous"]
+      positionalsToAttrs [ PositionalAttr "verse"
+                         , PositionalAttr "Anonymous"
+                         , PositionalAttr "Boring"
+                         , PositionalAttr "should-be-ignored"
+                         ]
+        `shouldBe` [ Attr "style" "verse"
+                   , Attr "attribution" "Anonymous"
+                   , Attr "citetitle" "Boring"
+                   ]

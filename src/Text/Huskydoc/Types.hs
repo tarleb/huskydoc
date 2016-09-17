@@ -45,7 +45,6 @@ module Text.Huskydoc.Types
   , nullAttributes
   , plainElement
   , richElement
-  , simpleNamedAttr
   , toAttributes
   ) where
 
@@ -61,8 +60,8 @@ data Document = Document MetaData Blocks deriving (Show, Eq)
 
 -- | Meta data of a document.
 data MetaData = MetaData
-    { metaDataTitle :: Inlines
-    } deriving (Show, Eq)
+  { metaDataTitle :: Inlines
+  } deriving (Show, Eq)
 
 -- | Element attributes
 newtype Attributes = Attributes { fromAttributes :: [Attr] }
@@ -72,10 +71,10 @@ instance Monoid Attributes where
   (Attributes a) `mappend` (Attributes b) = Attributes (a <> b)
   mempty = nullAttributes
 
-data Attr =
-    NamedAttr Text Text
-  | PositionalAttr Text
-  | OptionAttr Text
+data Attr = Attr
+  { attrKey :: Text
+  , attrValue :: Text
+  }
   deriving (Show, Eq, Ord)
 
 toAttributes :: [Attr] -> Attributes
@@ -94,9 +93,6 @@ plainElement x = RichElement nullAttributes x
 
 richElement :: Attributes -> a -> RichElement a
 richElement = RichElement
-
-simpleNamedAttr :: Text -> Text -> Attr
-simpleNamedAttr k v = NamedAttr k v
 
 -- | Inline text types.
 data Inline =

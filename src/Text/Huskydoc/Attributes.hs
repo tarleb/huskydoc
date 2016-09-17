@@ -29,39 +29,85 @@ Parser for element attributes.
 module Text.Huskydoc.Attributes
   ( Attributes (..)
   , Attr (..)
+  , RawAttr (..)
   , attributes
   , blockAttributes
   , blockTitle
+  , fromRawAttrs
   , namedAttr
   , positionalAttr
+  , positionalsToAttrs
   , toAttributes
   ) where
 
+import Data.Monoid ( (<>) )
+import Data.List ( partition )
+import Data.Text ( Text, pack, strip )
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Types
-import Data.Text ( pack, strip )
 
 attributes :: Parser Attributes
 attributes =
   let parseAttrs = (namedAttr <|> positionalAttr) `sepBy` (comma *> skipSpaces)
-  in toAttributes <$> try (between (char '[') (char ']') parseAttrs)
+  in fromRawAttrs <$> try (between (char '[') (char ']') parseAttrs)
 
-namedAttr :: Parser Attr
+-- | Raw, uninterpreted attributes as they are given in the text.
+data RawAttr =
+    NamedAttr Text Text
+  | StyleAttr Text
+  | PositionalAttr Text
+  | OptionRawAttr Text
+  deriving (Show, Eq, Ord)
+
+simpleNamedAttr :: Text -> Text -> RawAttr
+simpleNamedAttr k v = NamedAttr k v
+
+fromRawAttrs :: [RawAttr] -> Attributes
+fromRawAttrs raws =
+  let (positionals, nonPositionals) = partition isPositionalAttr raws
+  in toAttributes $
+       (positionalsToAttrs positionals) <> (foldr go [] nonPositionals)
+  where
+    go a acc = case a of
+      (NamedAttr key val) -> (Attr key val) : acc
+      (StyleAttr style)   -> (Attr "style" style) : acc
+      (PositionalAttr _)  -> acc
+      _                   -> acc
+
+
+isPositionalAttr :: RawAttr -> Bool
+isPositionalAttr (PositionalAttr _) = True
+isPositionalAttr _                  = False
+
+positionalsToAttrs :: [RawAttr] -> [Attr]
+positionalsToAttrs as =
+  case foldr keepPositionals [] as of
+    vs@("quote":_)  -> zipWith Attr ["style", "attribution", "citetitle"] vs
+    vs@("verse":_)  -> zipWith Attr ["style", "attribution", "citetitle"] vs
+    vs@("source":_) -> zipWith Attr ["style", "language", "linenums"] vs
+    _               -> []
+  where
+    keepPositionals :: RawAttr -> [Text] -> [Text]
+    keepPositionals ra acc = case ra of
+      (PositionalAttr txt) -> txt:acc
+      _                    -> acc
+
+namedAttr :: Parser RawAttr
 namedAttr = try $ do
   name <- pack <$> alphaNumChar `manyTill` (skipSpaces *> char '=')
   value <- pack <$> between doubleQuote doubleQuote (some (noneOf ("\"]"::String)))
   return $ simpleNamedAttr name value
 
-positionalAttr :: Parser Attr
+positionalAttr :: Parser RawAttr
 positionalAttr = PositionalAttr . strip . pack <$> try (some (noneOf ("],"::String)))
 
 -- | Title of a block element
-blockTitle :: Parser Attributes
-blockTitle = toAttributes . (:[]) . simpleNamedAttr "title" . pack <$> try title
+blockTitle :: Parser Attr
+blockTitle = Attr "title" . pack <$> try title
   where title = char '.' *> notFollowedBy spaceChar *> someTill anyChar eol
 
-blockId :: Parser Attributes
-blockId = toAttributes . (:[]) . simpleNamedAttr "id" . pack <$> try identifier
+blockId :: Parser Attr
+blockId = Attr "id" . pack <$> try identifier
   where identifier = between (string "[[")
                              (string "]]")
                              (some (alphaNumChar <|> oneOf ("-_"::String)))
@@ -73,7 +119,10 @@ blockGenericAttributes = attributes <* skipSpaces <* eol
 -- | All attributes of a block
 blockAttributes :: Parser Attributes
 blockAttributes = try $ do
-  attrList <- some (blockTitle <|> blockId <|> blockGenericAttributes)
+  attrList <- some $ choice [ toAttributes . (:[]) <$> blockTitle
+                            , toAttributes . (:[]) <$> blockId
+                            , blockGenericAttributes
+                            ]
   return $ mconcat attrList
 
 comma :: Parser Char
