@@ -65,7 +65,7 @@ spec = do
 
   describe "sectionTitle" $ do
     it "parses a section title" $ do
-      parseDef (attribless sectionTitle) "== Level1" `shouldParse`
+      parseDef (attribless sectionTitle) "== Level1\n" `shouldParse`
         (SectionTitle 1 [Str "Level1"])
     it "should only consume inline text in the current line" $ do
       parseDef (attribless sectionTitle) "== Level1\nNext line" `shouldParse`

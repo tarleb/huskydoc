@@ -156,6 +156,7 @@ listContinuation :: Parser ()
 listContinuation = label "list continuation" . try . void $
   char '+' <* eol
 
+
 --
 -- Section titles
 --
@@ -174,6 +175,7 @@ prefixedSectionTitle c = try $ do
   someSpaces
   guard (level <= 5)
   inlns <- inlinesExcluding [SoftBreakParser, HardBreakParser]
+  eol
   return $ \a -> RichSectionTitle a level inlns
 
 -- | Parse an underlined section title

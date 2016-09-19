@@ -32,12 +32,14 @@ module Text.Huskydoc.Parsing
   , ParserContext (..)
   , ParserState (..)
   , blankline
+  , getMetadata
   , getParserContexts
   , isAfterString
   , isAfterDelimitedElement
   , isInContext
   , markEndOfStr
   , markEndOfDelimitedElement
+  , modifyLocalState
   , notAfterString
   , parseDef
   , skipSpaces
@@ -49,12 +51,13 @@ module Text.Huskydoc.Parsing
   , module Text.Megaparsec
   ) where
 
-import           Control.Monad ( void )
+import Control.Monad ( void )
+import Control.Monad.Trans.Class (lift)
+import Data.Default ( Default(..) )
+import Data.Text ( Text )
+import Text.Huskydoc.Types ( Metadata(..) )
+import Text.Megaparsec hiding ( spaceChar )
 import qualified Control.Monad.Trans.State as TransState
-import           Control.Monad.Trans.Class (lift)
-import           Data.Default ( Default(..) )
-import           Data.Text ( Text )
-import           Text.Megaparsec hiding ( spaceChar )
 
 #if MIN_VERSION_megaparsec(5,0,0)
 type Parser = ParsecT Dec Text (TransState.State ParserState)
@@ -70,6 +73,7 @@ data ParserState = ParserState
   , stateLastDelimitedElementPos :: Maybe SourcePos -- ^ End of the last
                                                     -- element delimited by
                                                     -- markup characters
+  , stateMetadata       :: Metadata        -- ^ Meta information on the document
   , stateParserContexts :: [ParserContext] -- ^ Current parsing context; contexts
                                            -- entered first are listed last.
   }
@@ -78,6 +82,7 @@ instance Default ParserState where
   def = ParserState
         { stateLastStrPos = Nothing
         , stateLastDelimitedElementPos = Nothing
+        , stateMetadata = mempty
         , stateParserContexts = []
         }
 
@@ -101,6 +106,10 @@ getParserContexts = lift $ stateParserContexts <$> TransState.get
 
 isInContext :: ParserContext -> Parser Bool
 isInContext ctx = (ctx `elem`) <$> getParserContexts
+
+-- | Get metadata from parser state
+getMetadata :: Parser Metadata
+getMetadata = lift $ stateMetadata <$> TransState.get
 
 -- | Helper function to test parsers.  This sets the source name to the empty
 --   string and uses the default parser state.

@@ -29,7 +29,6 @@ Patterns for Huskydoc elements
 module Text.Huskydoc.Patterns
   ( module Text.Huskydoc.Types
   -- document
-  , metaData
   , emptyMeta
   -- Attributes
   , pattern EmptyAttributes
@@ -95,20 +94,8 @@ import qualified Text.Huskydoc.Types as Internal
 --
 
 -- | Empty metadata
-emptyMeta :: MetaData
-emptyMeta = MetaData emptyInlines
-
--- | Create a new metadata element
-metaData :: Inlines -> MetaData
-metaData metaDataTitle = MetaData {..}
-
-
---
--- wrappers
---
--- | Empty inlines
-emptyInlines :: Inlines
-emptyInlines = Internal.Inlines Seq.empty
+emptyMeta :: Metadata
+emptyMeta = mempty
 
 
 --

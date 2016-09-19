@@ -30,14 +30,55 @@ module Text.Huskydoc.Document
   , readAsciidoc
   ) where
 
-import Data.Text
-import Text.Huskydoc.Blocks (blocks)
-import Text.Huskydoc.Parsing ((<?>), Parser, HuskydocError, parseDef)
+import Control.Monad ( guard, void )
+import Data.Text ( Text, pack )
+import Text.Huskydoc.Blocks ( blocks, sectionTitle )
+import Text.Huskydoc.Parsing
 import Text.Huskydoc.Patterns
-
--- | Parse a complete AsciiDoc document
-document :: Parser Document
-document = Document <$> pure emptyMeta <*> blocks <?> "document"
 
 readAsciidoc :: Text -> Either HuskydocError Document
 readAsciidoc input = parseDef document input
+
+-- | Parse a complete AsciiDoc document
+document :: Parser Document
+document = label "document" $ do
+  optional documentTitle
+  blks <- blocks
+  meta <- getMetadata
+  return $ Document meta blks
+
+--
+-- Document title and metadata
+--
+
+-- | Parse a document title. This is inefficient, but should be called at most
+-- once for each document.
+documentTitle :: Parser ()
+documentTitle = label "document title" . try $ do
+  SectionTitle level titleInlns <- sectionTitle <*> pure nullAttributes
+  guard (level == 0)
+  (author, email, revision) <- (,,) <$> optional documentAuthor
+                                    <*> optional documentEmail
+                                    <*> optional documentRevision
+  modifyLocalState $ \st ->
+    let metadata = stateMetadata st
+    in st { stateMetadata =
+              metadata { metadataTitle = titleInlns
+                       , metadataAuthor = author
+                       , metadataEmail = email
+                       , metadataRevision = revision
+                       }
+          }
+
+documentAuthor :: Parser Text
+documentAuthor = label "document author" . try $
+  pack <$> someTill (noneOf ("\n\r"::String))
+           (blankline <|> void (lookAhead documentEmail))
+
+documentEmail :: Parser Text
+documentEmail = label "document email" . try $ do
+  char '<'
+  pack <$> someTill anyChar (char '>') <* skipSpaces <* eol
+
+documentRevision :: Parser Text
+documentRevision = return mempty

@@ -14,7 +14,9 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {- |
 Module      :  Text.Huskydoc.Pandoc
 Copyright   :  © 2016 Albert Krewinkel
@@ -32,18 +34,24 @@ module Text.Huskydoc.Pandoc
   , convertInlines
   ) where
 
-import           Prelude hiding ( foldr )
-import           Data.Foldable ( foldl', foldr )
-import           Data.Monoid ((<>))
-import           Data.Text ( Text, unpack )
-import           GHC.Exts ( IsList (..) )
-import           Text.Huskydoc.Patterns
+import Prelude hiding ( foldr )
+import Data.Foldable ( foldl', foldr )
+import Data.Monoid ((<>))
+import Data.Text ( Text, unpack )
+import GHC.Exts ( IsList (..) )
+import Text.Huskydoc.Attributes ( attribValue )
+import Text.Huskydoc.Patterns
+import Text.Pandoc.Definition (Pandoc)
 import qualified Text.Pandoc.Builder as Pandoc
-import           Text.Pandoc.Definition (Pandoc)
 
 -- | Convert a huskydoc AST into an pandoc AST
 convertDocument :: Document -> Pandoc
-convertDocument (Document _ bs) = Pandoc.doc . convertBlocks $ bs
+convertDocument (Document Metadata{..} bs) =
+  Pandoc.setTitle (convertInlines metadataTitle)
+  . maybe id (Pandoc.setAuthors . (:[]) . convertInlineElement . Str)
+          metadataAuthor
+  . Pandoc.doc
+  . convertBlocks $ bs
 
 -- | Convert huskydoc blocks into pandoc blocks
 convertBlocks :: Blocks -> Pandoc.Blocks

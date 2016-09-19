@@ -37,7 +37,7 @@ module Text.Huskydoc.Types
   , InlineElement
   , Inlines (..)
   , ListItem (..)
-  , MetaData (..)
+  , Metadata (..)
   , RichElement (..)
   , SourceLine (..)
   , TableRow (..)
@@ -48,6 +48,7 @@ module Text.Huskydoc.Types
   , toAttributes
   ) where
 
+import           Data.Default ( Default(..) )
 import           Data.Foldable as Foldable
 import           Data.Monoid ( (<>) )
 import           Data.Sequence ( Seq )
@@ -56,12 +57,32 @@ import           Data.Text
 import           GHC.Exts ( IsList (..) )
 
 -- | The full document
-data Document = Document MetaData Blocks deriving (Show, Eq)
+data Document = Document Metadata Blocks deriving (Show, Eq)
 
 -- | Meta data of a document.
-data MetaData = MetaData
-  { metaDataTitle :: Inlines
+data Metadata = Metadata
+  { metadataTitle    :: Inlines
+  , metadataAuthor   :: Maybe Text
+  , metadataEmail    :: Maybe Text
+  , metadataRevision :: Maybe Text
   } deriving (Show, Eq)
+
+instance Default Metadata where
+  def = Metadata
+    { metadataTitle    = []
+    , metadataAuthor   = Nothing
+    , metadataEmail    = Nothing
+    , metadataRevision = Nothing
+    }
+
+instance Monoid Metadata where
+  mempty = Metadata mempty Nothing Nothing Nothing
+  a `mappend` b =
+    Metadata { metadataTitle    = metadataTitle a <> metadataTitle b
+             , metadataAuthor   = metadataAuthor a <> metadataAuthor b
+             , metadataEmail    = metadataEmail a <> metadataEmail b
+             , metadataRevision = metadataRevision a <> metadataRevision b
+             }
 
 -- | Element attributes
 newtype Attributes = Attributes { fromAttributes :: [Attr] }
