@@ -77,17 +77,17 @@ module Text.Huskydoc.Patterns
   , paragraphWith
   ) where
 
-import           Data.Maybe (fromMaybe)
-import           Data.Sequence ( Seq, ViewL (..), ViewR (..), viewl, viewr )
-import qualified Data.Sequence as Seq
-import           Text.Huskydoc.Types ( Attributes (..), RichElement (..)
-                                     , Document (..), MetaData (..)
-                                     , BlockElement, Blocks (..)
-                                     , InlineElement, Inlines (..)
-                                     , ListItem (..), SourceLine (..)
-                                     , TableRow (..), TableCell (..)
-                                     , plainElement , nullAttributes
-                                     )
+import Data.Maybe (fromMaybe)
+import Data.Sequence ( Seq, ViewL (..), ViewR (..), viewl, viewr )
+import Text.Huskydoc.Types ( Attributes (..), Attr (..)
+                           , RichElement (..)
+                           , Document (..), Metadata (..)
+                           , BlockElement, Blocks (..)
+                           , InlineElement, Inlines (..)
+                           , ListItem (..), SourceLine (..)
+                           , TableRow (..), TableCell (..)
+                           , plainElement , nullAttributes
+                           )
 import qualified Text.Huskydoc.Types as Internal
 
 --

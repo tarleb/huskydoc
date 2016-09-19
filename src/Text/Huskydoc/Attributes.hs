@@ -30,10 +30,12 @@ module Text.Huskydoc.Attributes
   ( Attributes (..)
   , Attr (..)
   , RawAttr (..)
+  , attribValue
   , attributes
   , blockAttributes
   , blockTitle
   , fromRawAttrs
+  , imageAttributes
   , namedAttr
   , positionalAttr
   , positionalsToAttrs
@@ -41,7 +43,7 @@ module Text.Huskydoc.Attributes
   ) where
 
 import Data.Monoid ( (<>) )
-import Data.List ( partition )
+import Data.List ( find, partition )
 import Data.Text ( Text, pack, strip )
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Types
@@ -50,6 +52,21 @@ attributes :: Parser Attributes
 attributes =
   let parseAttrs = (namedAttr <|> positionalAttr) `sepBy` (comma *> skipSpaces)
   in fromRawAttrs <$> try (between (char '[') (char ']') parseAttrs)
+
+imageAttributes :: Parser Attributes
+imageAttributes =
+  let parseAttrs = (namedAttr <|> positionalAttr) `sepBy` (comma *> skipSpaces)
+      removeStyle = filter ((/= "style") . attrKey)
+  in withAttrs removeStyle . fromRawAttrs . (PositionalAttr "image":)
+     <$> try (between (char '[') (char ']') parseAttrs)
+
+-- | Helper function, applying a filter to Attributes
+withAttrs :: ([Attr] -> [Attr]) -> Attributes -> Attributes
+withAttrs f = toAttributes . f . fromAttributes
+
+attribValue :: Attributes -> Text -> Maybe Text
+attribValue attribs key =
+  attrValue <$> find ((== key) . attrKey) (fromAttributes attribs)
 
 -- | Raw, uninterpreted attributes as they are given in the text.
 data RawAttr =
@@ -81,11 +98,13 @@ isPositionalAttr _                  = False
 
 positionalsToAttrs :: [RawAttr] -> [Attr]
 positionalsToAttrs as =
-  case foldr keepPositionals [] as of
-    vs@("quote":_)  -> zipWith Attr ["style", "attribution", "citetitle"] vs
-    vs@("verse":_)  -> zipWith Attr ["style", "attribution", "citetitle"] vs
-    vs@("source":_) -> zipWith Attr ["style", "language", "linenums"] vs
-    _               -> []
+  let values = foldr keepPositionals [] as
+  in ($ values) $ case values of
+    ("quote":_)  -> zipWith Attr ["style", "attribution", "citetitle"]
+    ("verse":_)  -> zipWith Attr ["style", "attribution", "citetitle"]
+    ("source":_) -> zipWith Attr ["style", "language", "linenums"]
+    ("image":_)  -> zipWith Attr ["style", "alt", "width", "height"]
+    _            -> const []
   where
     keepPositionals :: RawAttr -> [Text] -> [Text]
     keepPositionals ra acc = case ra of

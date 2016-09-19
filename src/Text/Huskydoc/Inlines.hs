@@ -230,7 +230,7 @@ image = try $ do
   let disallowedSourceChars = "[] " <> specialCharacters :: String
   string "image:"
   src <- pack <$> manyTill (noneOf disallowedSourceChars) (lookAhead $ char '[')
-  attribs <- attributes
+  attribs <- imageAttributes
   return $ RichImage attribs src
 
 -- | Parse a links
