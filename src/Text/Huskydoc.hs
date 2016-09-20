@@ -13,7 +13,6 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
-
 {-# LANGUAGE OverloadedStrings #-}
 {-|
 Module      :  Text.Huskydoc
@@ -27,15 +26,15 @@ Portability :  portable
 Asciidoc parser.
 -}
 module Text.Huskydoc
-    ( parseAsciidoc
-    ) where
+  ( parseToPandoc
+  ) where
 
-import Data.Text
-import Text.Huskydoc.Document (readAsciidoc)
-import Text.Huskydoc.Pandoc (convertDocument)
+import Data.Bifunctor ( second )
+import Data.Text ( Text )
+import Text.Huskydoc.Document ( readAsciidoc )
+import Text.Huskydoc.Pandoc ( convertDocument )
+import Text.Huskydoc.Parsing ( HuskydocError )
+import Text.Pandoc.Definition ( Pandoc )
 
-parseAsciidoc :: Text -> IO Text
-parseAsciidoc t =
-  return $ case (readAsciidoc t) of
-             Left _ -> "An error occured."
-             Right x -> pack $ show (convertDocument x)
+parseToPandoc :: Text -> Either HuskydocError Pandoc
+parseToPandoc = second convertDocument . readAsciidoc

@@ -28,20 +28,28 @@ Program wrapper for the huskydoc library.
 -}
 module Main where
 
-import Prelude hiding (putStrLn, readFile)
+import Prelude hiding ( putStrLn, readFile )
 
-import Data.Text
+import Data.Aeson ( encode )
+import Data.Text ( Text )
 import Data.Text.IO ( putStrLn, readFile )
-import Text.Huskydoc ( parseAsciidoc )
+import Text.Huskydoc ( parseToPandoc )
 import System.Environment ( getArgs )
+import qualified Data.ByteString.Lazy.Char8 as LBS
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
     [] -> putStrLn usage
-    (x:_) -> do
-              readFile x >>= parseAsciidoc >>= putStrLn
+    (x:_) -> outputAsPandocJson x
+
+outputAsPandocJson :: FilePath -> IO ()
+outputAsPandocJson path = do
+  result <- parseToPandoc <$> readFile path
+  case result of
+    Left e  -> error (show e)
+    Right p -> LBS.putStrLn (encode p)
 
 usage :: Text
 usage = "Usage: huskydoc <INPUTFILE>\n"
