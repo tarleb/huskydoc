@@ -13,7 +13,7 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 -}
-
+{-# LANGUAGE LambdaCase #-}
 {-|
 Module      :  Text.Huskydoc.Inlines
 Copyright   :  © 2016 Albert Krewinkel
@@ -52,7 +52,7 @@ module Text.Huskydoc.Inlines
 import Control.Monad ( guard, void )
 import Data.Char ( isSpace )
 import Data.Maybe ( fromMaybe )
-import Data.List ( intercalate )
+import Data.List ( (\\), intercalate )
 import Data.Monoid ( (<>) )
 import Data.Text (Text, pack, singleton )
 import GHC.Exts ( IsList(..) )
@@ -76,46 +76,49 @@ inlinesWithinLine = inlinesExcluding [HardBreakParser, SoftBreakParser]
 inlinesBetween :: Parser a -> Parser b -> Parser Inlines
 inlinesBetween start end = fromList <$> (start *> someTill inlineElement end)
 
+-- | Inline parser enum, defined in the order in which the respective parsers
+-- should be tried.
 data InlineParser =
-    EmphasisParser
-  | HardBreakParser
-  | ImageParser
-  | LinkParser
-  | MonoSpacedParser
+    HardBreakParser
+  | WhitespaceParser
   | SoftBreakParser
-  | StrParser
   | StrongParser
-  | SymbolParser
+  | EmphasisParser
+  | MonoSpacedParser
   | SubscriptParser
   | SuperscriptParser
-  | WhitespaceParser
-  deriving (Eq, Ord, Show)
+  | LinkParser
+  | ImageParser
+  | StrParser
+  | SymbolParser
+  deriving (Eq, Ord, Show, Enum, Bounded)
 
--- | Inline parser methods, marked by @InlineParser@ type. The order of the
--- parsers is the order in which they should be tried.
-inlineParsers :: [(InlineParser, Parser InlineElement)]
-inlineParsers =
-  [ (HardBreakParser, hardbreak)
-  , (WhitespaceParser, whitespace)
-  , (SoftBreakParser, softbreak)
-  , (StrongParser, strong)
-  , (EmphasisParser, emphasis)
-  , (MonoSpacedParser, monospaced)
-  , (SubscriptParser, subscript)
-  , (SuperscriptParser, superscript)
-  , (LinkParser, link)
-  , (ImageParser, image)
-  , (StrParser, str)
-  , (SymbolParser, symbol)
-  ]
+-- | Inline parser methods in the order in which they should be tried.
+inlineParsers :: [Parser InlineElement]
+inlineParsers = map inlineParser [minBound ..]
+
+-- | Get the corresponding parser method for the given parser enum.
+inlineParser :: InlineParser -> Parser InlineElement
+inlineParser = \case
+  EmphasisParser    -> emphasis
+  HardBreakParser   -> hardbreak
+  ImageParser       -> image
+  LinkParser        -> link
+  MonoSpacedParser  -> monospaced
+  SoftBreakParser   -> softbreak
+  StrParser         -> str
+  StrongParser      -> strong
+  SubscriptParser   -> subscript
+  SuperscriptParser -> superscript
+  SymbolParser      -> symbol
+  WhitespaceParser  -> whitespace
 
 -- | Parse a single inline element.
 inlineElement :: Parser InlineElement
-inlineElement = choice (map snd inlineParsers) <?> "inline element"
+inlineElement = label "inline element" $ choice inlineParsers
 
 inlineElementExcluding :: [InlineParser] -> Parser InlineElement
-inlineElementExcluding ps =
-  choice . map snd . filter ((`notElem` ps) . fst) $ inlineParsers
+inlineElementExcluding = choice . map inlineParser . ([minBound ..] \\)
 
 -- | Parse one or more whitespace characters (i.e. tabs or spaces).
 whitespace :: Parser InlineElement
