@@ -26,11 +26,9 @@ Portability :  portable
 Parsers for inline elements
 -}
 module Text.Huskydoc.Inlines
-  ( InlineParser (..)
-  , inlineParsers
-  , inlineElement
+  ( inlineElement
   , inlines
-  , inlinesExcluding
+  , inlinesWithinLine
   -- Single inline parsers
   , emphasis
   , hardbreak
@@ -69,6 +67,10 @@ inlines = fromList <$> some inlineElement
 -- | Parse one or more inlines, excluding some inline element parsers
 inlinesExcluding :: [InlineParser] -> Parser Inlines
 inlinesExcluding excl = fromList <$> some (inlineElementExcluding excl)
+
+-- | Parse one or more non-newline consuming inlines
+inlinesWithinLine :: Parser Inlines
+inlinesWithinLine = inlinesExcluding [HardBreakParser, SoftBreakParser]
 
 -- | One or more inlines surrounded but @start@ and @end@
 inlinesBetween :: Parser a -> Parser b -> Parser Inlines

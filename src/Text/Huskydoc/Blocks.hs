@@ -51,8 +51,7 @@ import Data.Monoid ( (<>) )
 import Data.Text ( pack )
 import GHC.Exts ( IsList(..) )
 import Text.Huskydoc.Attributes ( blockAttributes )
-import Text.Huskydoc.Inlines ( inlines, inlinesExcluding
-                             , InlineParser(..) )
+import Text.Huskydoc.Inlines ( inlines, inlinesWithinLine )
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Patterns
 
@@ -174,14 +173,14 @@ prefixedSectionTitle c = try $ do
   level <- (\n -> n - 1) . length <$> some (char c)
   someSpaces
   guard (level <= 5)
-  inlns <- inlinesExcluding [SoftBreakParser, HardBreakParser]
+  inlns <- inlinesWithinLine
   eol
   return $ \a -> RichSectionTitle a level inlns
 
 -- | Parse an underlined section title
 underlinedSectionTitle :: Parser (Attributes -> BlockElement)
 underlinedSectionTitle = try $ do
-  let titleLine = inlinesExcluding [SoftBreakParser, HardBreakParser]
+  let titleLine = inlinesWithinLine
   (strlen, inlns) <- withColumnCount titleLine <* eol
   lineChar <- titleUnderline strlen
   level <- levelFromLineChar lineChar
@@ -252,8 +251,7 @@ tableRow = try $ do
 tableCell :: Parser TableCell
 tableCell =
   let cellInlines = stripInlines . mconcat <$> try
-                    (withContext TableContext $
-                     some (inlinesExcluding [SoftBreakParser, HardBreakParser]))
+                    (withContext TableContext $ some inlinesWithinLine)
   in (\inlns -> TableCell [Paragraph inlns]) <$> cellInlines
 
 -- | A simple paragraph
