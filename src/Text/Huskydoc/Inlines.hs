@@ -263,16 +263,16 @@ symbol = do
   Str . singleton <$> oneOf allowedChars
 
 -- | Get a list of characters that may not be be parsed as parts of inline
--- elements. The list changes depending on the current context.
+-- elements. The list depends on the current context.
 forbiddenChars :: Parser String
 forbiddenChars = foldr addCharsForbiddenInContext [] <$> getParserContexts
   where
     addCharsForbiddenInContext :: ParserContext -> [Char] -> [Char]
     addCharsForbiddenInContext ctx cs =
       case ctx of
-        TableContext -> '|':cs
+        TableContext                -> '|':cs
         ListContextWithMarker (x:_) -> x:cs
-        _            -> cs
+        _                           -> cs
 
 specialCharacters :: String
 specialCharacters =
@@ -286,7 +286,7 @@ specialCharacters =
 markupDelimiterCharacters :: String
 markupDelimiterCharacters =
   [ '*'  -- opening/closing character for strong
-  , '+'  -- continuation marker, part of hardbreaks
+  , '+'  -- opening/closing for monospaced, continuation marker, hardbreaks
   , '['  -- beginning of attributes or link description
   , ']'  -- end of attributes or link description
   , '^'  -- opening/closing character for superscript

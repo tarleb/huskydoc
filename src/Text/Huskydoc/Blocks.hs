@@ -44,7 +44,7 @@ module Text.Huskydoc.Blocks
   ) where
 
 import Control.Applicative ( (<**>) )
-import Control.Monad ( guard, mzero, void )
+import Control.Monad ( guard, mzero, void, when )
 import Data.List ( findIndex )
 import Data.Maybe ( fromMaybe )
 import Data.Monoid ( (<>) )
@@ -135,8 +135,10 @@ bulletListMarkerChars = "-*"
 -- | Parse a list element marked by @marker@
 listItem :: String -> Parser ListItem
 listItem marker = label ("list item with marker '" <> marker <> "'") . try $
+  -- The first skipSpaces is conditional as it would consume all spaces if the
+  -- marker is empty, causing the next someSpaces to fail.
   skipMany blankline
-  *> (if marker == "" then pure () else skipSpaces)
+  *> when (marker /= "") skipSpaces
   *> string marker
   *> someSpaces
   *> (ListItem <$> listItemBlocks)
