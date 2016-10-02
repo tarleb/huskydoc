@@ -40,6 +40,7 @@ module Text.Huskydoc.Types
   , Metadata (..)
   , RichElement (..)
   , SourceLine (..)
+  , Table (..)
   , TableRow (..)
   , TableCell (..)
   , nullAttributes
@@ -153,12 +154,19 @@ data Block =
   | Paragraph Inlines
   | SectionTitle Int Inlines
   | Source [SourceLine]
-  | Table [TableRow]
+  | TableBlock Table
   deriving (Show, Eq, Ord)
 
 -- | Source block line
 newtype SourceLine = SourceLine { fromSourceLine :: Text }
   deriving (Eq, Ord, Show)
+
+data Table = Table
+  { tableHeader :: Maybe TableRow
+  , tableBody   :: [TableRow]
+  , tableFooter :: Maybe TableRow
+  }
+  deriving (Show, Eq, Ord)
 
 -- | Table row
 newtype TableRow = TableRow { fromTableRow :: [TableCell] }

@@ -259,9 +259,15 @@ pattern SectionTitle :: Int -> Inlines -> BlockElement
 pattern SectionTitle lvl inlns <- RichElement _ (Internal.SectionTitle lvl inlns)
   where SectionTitle lvl inlns = plainElement (Internal.SectionTitle lvl inlns)
 
-pattern Table :: [TableRow] -> BlockElement
-pattern Table rows <- RichElement _ (Internal.Table rows)
-  where Table rows = plainElement (Internal.Table rows)
+pattern Table :: Maybe TableRow
+              -> [TableRow]
+              -> Maybe TableRow
+              -> BlockElement
+pattern Table header rows footer <-
+    RichElement _ (Internal.TableBlock (Internal.Table header rows footer))
+  where Table header rows footer =
+          plainElement (Internal.TableBlock (Internal.Table header rows footer))
+
 
 --
 -- Block elements with attributes ("Rich" block elements)
@@ -292,5 +298,10 @@ pattern RichSource :: Attributes -> [SourceLine] -> BlockElement
 pattern RichSource attr srcLines = RichElement attr (Internal.Source srcLines)
 
 -- | Table with attributes
-pattern RichTable :: Attributes -> [TableRow] -> BlockElement
-pattern RichTable attr rows = RichElement attr (Internal.Table rows)
+pattern RichTable :: Attributes
+                  -> Maybe TableRow
+                  -> [TableRow]
+                  -> Maybe TableRow
+                  -> BlockElement
+pattern RichTable attr header rows footer =
+  RichElement attr (Internal.TableBlock (Internal.Table header rows footer))

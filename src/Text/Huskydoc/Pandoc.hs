@@ -72,7 +72,7 @@ convertBlockElement = \case
   (HorizontalRule)         -> Pandoc.horizontalRule
   (OrderedList lst)        -> Pandoc.orderedList . map convertListItem $ lst
   (Paragraph inlns)        -> Pandoc.para (convertInlines inlns)
-  (Table rows)             -> let pandocRows = map convertRows rows
+  (Table _ rows _)         -> let pandocRows = map convertRows rows
                                   headers = map (const mempty) (head pandocRows)
                               in Pandoc.simpleTable headers pandocRows
   _                        -> mempty

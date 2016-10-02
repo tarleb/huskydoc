@@ -237,8 +237,11 @@ sourceBlockLine = label "source line" . try $ do
 
 -- | Parse a table
 table :: Parser (Attributes -> BlockElement)
-table = try $ flip RichTable <$>
-  (tableBoundary *> some tableRow <* tableBoundary)
+table = try $ do
+  tableBoundary
+  firstRow <- tableRow
+  bodyRows <- manyTill tableRow tableBoundary
+  return (\a -> RichTable a (Just firstRow) bodyRows Nothing)
 
 tableBoundary :: Parser String
 tableBoundary = try $
