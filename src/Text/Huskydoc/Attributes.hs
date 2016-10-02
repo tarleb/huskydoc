@@ -29,16 +29,18 @@ Parser for element attributes.
 module Text.Huskydoc.Attributes
   ( Attributes (..)
   , Attr (..)
+  , RawAttributes
   , RawAttr (..)
   , attribValue
   , attributes
-  , blockAttributes
+  , blockRawAttributes
   , blockTitle
-  , fromRawAttrs
+  , fromRawAttributes
   , imageAttributes
   , namedAttr
   , positionalAttr
   , positionalsToAttrs
+  , rawAttributes
   , toAttributes
   ) where
 
@@ -49,15 +51,18 @@ import Text.Huskydoc.Parsing
 import Text.Huskydoc.Types
 
 attributes :: Parser Attributes
-attributes =
+attributes = fromRawAttributes <$> rawAttributes
+
+rawAttributes :: Parser RawAttributes
+rawAttributes = label "raw attributes" $
   let parseAttrs = (namedAttr <|> positionalAttr) `sepBy` (comma *> skipSpaces)
-  in fromRawAttrs <$> try (between (char '[') (char ']') parseAttrs)
+  in try (between (char '[') (char ']') parseAttrs)
 
 imageAttributes :: Parser Attributes
 imageAttributes =
   let parseAttrs = (namedAttr <|> positionalAttr) `sepBy` (comma *> skipSpaces)
       removeStyle = filter ((/= "style") . attrKey)
-  in withAttrs removeStyle . fromRawAttrs . (PositionalAttr "image":)
+  in withAttrs removeStyle . fromRawAttributes . (PositionalAttr "image":)
      <$> try (between (char '[') (char ']') parseAttrs)
 
 -- | Helper function, applying a filter to Attributes
@@ -67,6 +72,9 @@ withAttrs f = toAttributes . f . fromAttributes
 attribValue :: Attributes -> Text -> Maybe Text
 attribValue attribs key =
   attrValue <$> find ((== key) . attrKey) (fromAttributes attribs)
+
+-- | Set of raw attrs
+type RawAttributes = [RawAttr]
 
 -- | Raw, uninterpreted attributes as they are given in the text.
 data RawAttr =
@@ -79,8 +87,8 @@ data RawAttr =
 simpleNamedAttr :: Text -> Text -> RawAttr
 simpleNamedAttr k v = NamedAttr k v
 
-fromRawAttrs :: [RawAttr] -> Attributes
-fromRawAttrs raws =
+fromRawAttributes :: RawAttributes -> Attributes
+fromRawAttributes raws =
   let (positionals, nonPositionals) = partition isPositionalAttr raws
   in toAttributes $
        (positionalsToAttrs positionals) <> (foldr go [] nonPositionals)
@@ -90,7 +98,6 @@ fromRawAttrs raws =
       (StyleAttr style)   -> (Attr "style" style) : acc
       (PositionalAttr _)  -> acc
       _                   -> acc
-
 
 isPositionalAttr :: RawAttr -> Bool
 isPositionalAttr (PositionalAttr _) = True
@@ -121,26 +128,23 @@ positionalAttr :: Parser RawAttr
 positionalAttr = PositionalAttr . strip . pack <$> try (some (noneOf ("],"::String)))
 
 -- | Title of a block element
-blockTitle :: Parser Attr
-blockTitle = Attr "title" . pack <$> try title
+blockTitle :: Parser RawAttr
+blockTitle = NamedAttr "title" . pack <$> try title
   where title = char '.' *> notFollowedBy spaceChar *> someTill anyChar eol
 
-blockId :: Parser Attr
-blockId = Attr "id" . pack <$> try identifier
+blockId :: Parser RawAttr
+blockId = NamedAttr "id" . pack <$> try identifier
   where identifier = between (string "[[")
                              (string "]]")
                              (some (alphaNumChar <|> oneOf ("-_"::String)))
                      <* skipSpaces <* eol
 
-blockGenericAttributes :: Parser Attributes
-blockGenericAttributes = attributes <* skipSpaces <* eol
-
--- | All attributes of a block
-blockAttributes :: Parser Attributes
-blockAttributes = try $ do
-  attrList <- some $ choice [ toAttributes . (:[]) <$> blockTitle
-                            , toAttributes . (:[]) <$> blockId
-                            , blockGenericAttributes
+-- | All raw attributes of a block
+blockRawAttributes :: Parser RawAttributes
+blockRawAttributes = try $ do
+  attrList <- some $ choice [ (:[]) <$> blockTitle
+                            , (:[]) <$> blockId
+                            , rawAttributes <* skipSpaces <* eol
                             ]
   return $ mconcat attrList
 

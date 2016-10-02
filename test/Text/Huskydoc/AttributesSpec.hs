@@ -63,14 +63,14 @@ spec = do
         `shouldParse` (toAttributes [Attr "role" "verse"])
     it "parses a many comma-separated positional attributes" $ do
       parseDef attributes "[verse,rick, roll ]" `shouldParse`
-        (fromRawAttrs
+        (fromRawAttributes
          [ PositionalAttr "verse"
          , PositionalAttr "rick"
          , PositionalAttr "roll"
          ])
     it "parses a many comma-separated named attributes" $ do
       parseDef attributes "[quality=\"medium\", summer=\"hot\", drinks=\"cool\"]"
-        `shouldParse` (fromRawAttrs
+        `shouldParse` (fromRawAttributes
            [ NamedAttr "quality" "medium"
            , NamedAttr "summer" "hot"
            , NamedAttr "drinks" "cool"

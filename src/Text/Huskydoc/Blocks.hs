@@ -41,16 +41,17 @@ module Text.Huskydoc.Blocks
   , tableCell
   , tableRow
   , withBlockAttributes
+  , withRawAttributes
   ) where
 
-import Control.Applicative ( (<**>) )
 import Control.Monad ( guard, mzero, void, when )
 import Data.List ( findIndex )
 import Data.Maybe ( fromMaybe )
 import Data.Monoid ( (<>) )
 import Data.Text ( pack )
 import GHC.Exts ( IsList(..) )
-import Text.Huskydoc.Attributes ( blockAttributes )
+import Text.Huskydoc.Attributes ( RawAttributes
+                                , blockRawAttributes , fromRawAttributes )
 import Text.Huskydoc.Inlines ( inlines, inlinesWithinLine )
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Patterns
@@ -59,14 +60,12 @@ blocks :: Parser Blocks
 blocks = fromList <$> some blockElement
 
 blockElement :: Parser BlockElement
-blockElement = label "block element" $
-  many blankline
-  *> (fromMaybe mempty <$> optional blockAttributes)
-  <**> choice blockElementParsers
+blockElement = label "block element" $ many blankline
+  *> withRawAttributes (choice . blockElementParsers)
   <* optional eol
 
-blockElementParsers :: [Parser (Attributes -> BlockElement)]
-blockElementParsers =
+blockElementParsers :: RawAttributes -> [Parser BlockElement]
+blockElementParsers rawAttrbs = map (<*> pure (fromRawAttributes rawAttrbs))
   [ list
   , horizontalRule
   , sectionTitle
@@ -75,8 +74,13 @@ blockElementParsers =
   , paragraph
   ]
 
-withBlockAttributes :: Parser (Attributes -> BlockElement) -> Parser BlockElement
-withBlockAttributes p = fromMaybe mempty <$> optional blockAttributes <**> p
+withRawAttributes :: (RawAttributes -> Parser a) -> Parser a
+withRawAttributes p =
+  (fromMaybe mempty <$> optional blockRawAttributes) >>= p
+
+withBlockAttributes :: Parser (Attributes -> a) -> Parser a
+withBlockAttributes p =
+  withRawAttributes $ \x -> p <*> pure (fromRawAttributes x)
 
 -- | Parse an horizontal rule
 horizontalRule :: Parser (Attributes -> BlockElement)
