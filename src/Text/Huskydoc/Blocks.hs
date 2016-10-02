@@ -38,8 +38,6 @@ module Text.Huskydoc.Blocks
   , table
   -- helpers and intermediary parsers
   , listItem
-  , tableCell
-  , tableRow
   , withBlockAttributes
   , withRawAttributes
   ) where
@@ -55,6 +53,7 @@ import Text.Huskydoc.Attributes ( RawAttributes
 import Text.Huskydoc.Inlines ( inlines, inlinesWithinLine )
 import Text.Huskydoc.Parsing
 import Text.Huskydoc.Patterns
+import Text.Huskydoc.Table ( table )
 
 blocks :: Parser Blocks
 blocks = fromList <$> some blockElement
@@ -229,39 +228,6 @@ source = label "source block" . try $ do
 sourceBlockLine :: Parser SourceLine
 sourceBlockLine = label "source line" . try $ do
   SourceLine . pack <$> manyTill anyChar eol
-
-
---
--- Tables
---
-
--- | Parse a table
-table :: Parser (Attributes -> BlockElement)
-table = try $ do
-  tableBoundary
-  firstRow <- tableRow
-  bodyRows <- manyTill tableRow tableBoundary
-  return (\a -> RichTable a (Just firstRow) bodyRows Nothing)
-
-tableBoundary :: Parser String
-tableBoundary = try $
-  string "|===" <* optional (many (char '=')) <* skipSpaces <* eol
-
--- | Parse a simple, single line, table row
-tableRow :: Parser TableRow
-tableRow = try $ do
-  notFollowedBy tableBoundary
-  char '|'
-  cells <- tableCell `sepBy1` (char '|')
-  skipSpaces <* eol
-  return $ TableRow cells
-
--- | Parse a single table cell
-tableCell :: Parser TableCell
-tableCell =
-  let cellInlines = stripInlines . mconcat <$> try
-                    (withContext TableContext $ some inlinesWithinLine)
-  in (\inlns -> TableCell [Paragraph inlns]) <$> cellInlines
 
 -- | A simple paragraph
 paragraph :: Parser (Attributes -> BlockElement)

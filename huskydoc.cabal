@@ -23,6 +23,7 @@ library
                      , Text.Huskydoc.Pandoc
                      , Text.Huskydoc.Parsing
                      , Text.Huskydoc.Patterns
+                     , Text.Huskydoc.Table
                      , Text.Huskydoc.Types
   build-depends:       base             >= 4.8  && < 5
                      , containers       >= 0.5  && < 0.6
@@ -54,6 +55,7 @@ test-suite huskydoc-test
                      , Text.Huskydoc.DocumentSpec
                      , Text.Huskydoc.InlinesSpec
                      , Text.Huskydoc.ParsingSpec
+                     , Text.Huskydoc.TableSpec
   build-depends:       base
                      , huskydoc
                      , hspec            >= 2.2 && < 2.3
