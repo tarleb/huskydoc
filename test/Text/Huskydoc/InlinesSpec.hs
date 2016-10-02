@@ -31,7 +31,6 @@ module Text.Huskydoc.InlinesSpec
   , spec
   ) where
 
-import Data.Text
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import Text.Huskydoc.Inlines

@@ -28,11 +28,9 @@ module Text.Huskydoc.ParsingSpec
   , spec
   ) where
 
-import Text.Huskydoc.Parsing
-
-import Data.Text
 import Test.Hspec
 import Test.Hspec.Megaparsec
+import Text.Huskydoc.Parsing
 
 -- | Run this spec.
 main :: IO ()
