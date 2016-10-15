@@ -3,6 +3,9 @@ Huskydoc
 
 Parser for AsciiDoc documents.
 
+[![license](https://img.shields.io/badge/license-ISC-brightgreen.svg)](https://opensource.org/licenses/isc-license)
+[![travis build status](https://img.shields.io/travis/tarleb/huskydoc.svg)](https://travis-ci.org/tarleb/huskydoc)
+
 Usage
 -----
 
