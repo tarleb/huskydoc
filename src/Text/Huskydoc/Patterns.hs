@@ -72,11 +72,8 @@ module Text.Huskydoc.Patterns
   , pattern RichStrong
   , pattern RichSubscript
   , pattern RichSuperscript
-  , sectionTitleWith
-  , paragraphWith
   ) where
 
-import Data.Maybe (fromMaybe)
 import Data.Sequence ( Seq, ViewL (..), ViewR (..), viewl, viewr )
 import Data.Text ( Text )
 import Text.Huskydoc.Types ( Attributes (..), Attr (..)
@@ -183,7 +180,6 @@ stripInlines = Inlines . trimInlinesLeft . trimInlinesRight . fromInlines
       is :> HardBreak -> trimInlinesRight is
       is :> SoftBreak -> trimInlinesRight is
       _               -> inlns
-
 
 
 --
@@ -298,10 +294,3 @@ pattern RichSource attr srcLines = RichElement attr (Internal.Source srcLines)
 -- | Table with attributes
 pattern RichTable :: Attributes -> [TableRow] -> BlockElement
 pattern RichTable attr rows = RichElement attr (Internal.Table rows)
-
-
-paragraphWith :: Inlines -> Maybe Attributes -> BlockElement
-paragraphWith inlns a = fromMaybe nullAttributes a `RichParagraph` inlns
-
-sectionTitleWith :: Int -> Inlines -> Maybe Attributes -> BlockElement
-sectionTitleWith lvl inlns a = (maybe SectionTitle RichSectionTitle a) lvl $ inlns
