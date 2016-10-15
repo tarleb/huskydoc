@@ -3,6 +3,20 @@ Huskydoc
 
 Parser for AsciiDoc documents.
 
+Usage
+-----
+
+The main purpose of `huskydoc` is the transformation of AsciiDoc documents
+into [Pandoc](http://pandoc.org) format. The document is transformed into a
+pandoc-readable JSON structure. The following command uses `huskydoc` and
+`pandoc` to transform an AsciiDoc document into LaTeX:
+
+    huskydoc document.adoc | pandoc -f json -t latex
+
+The important part of the above command is `-f json`, telling Pandoc which input
+format to expect. See the [Pandoc manual](https://pandoc.org/MANUAL.html) for
+more options.
+
 License
 -------
 
